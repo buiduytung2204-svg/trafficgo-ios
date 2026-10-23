@@ -1,5 +1,9 @@
 # TrafficGo — trạng thái ngày 23/10/2026
 
+## Repository public
+
+Theo yêu cầu người dùng, source đã được đẩy lên https://github.com/buiduytung2204-svg/trafficgo-ios, nhánh main. Tên trafficgo đã tồn tại nên dùng trafficgo-ios; không sửa repo cũ. Trước khi push đã quét 113 file trong commit, không có API key/access token cấu hình thật. .env, bộ đếm quota, virtualenv, build artifacts và signing credentials bị Git bỏ qua. Các ghi chú “chưa push” bên dưới là lịch sử trước yêu cầu công khai repository; không đồng nghĩa đã deploy backend hoặc phát hành app.
+
 Chưa đạt nghiệm thu MVP live. Không có credentials TomTom, CI/signing, PostgreSQL server hay iPhone trong môi trường hiện tại. Không push, deploy, publish, mua dịch vụ hoặc tạo chứng chỉ giả.
 
 ## Cập nhật sau khi nhận key
