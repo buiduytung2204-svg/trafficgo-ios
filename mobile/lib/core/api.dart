@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'models.dart';
+import 'performance.dart';
 
 const apiBase = String.fromEnvironment(
   'API_BASE_URL',
@@ -43,17 +44,32 @@ class TrafficApi {
     Place destination, {
     bool refresh = false,
   }) async {
-    final r = await dio.post(
-      '/api/v1/routes/${refresh ? 'refresh' : 'calculate'}',
-      data: {
-        'origin': {'lat': origin.latitude, 'lon': origin.longitude},
-        'destination': destination.toJson()['coordinate'],
-        'vehicle': 'car',
-      },
-    );
-    return fastestRoutes(
-      (r.data['routes'] as List).map((j) => TravelRoute.fromJson(j)).toList(),
-    );
+    final clock = Stopwatch()..start();
+    try {
+      final r = await dio.post(
+        '/api/v1/routes/${refresh ? 'refresh' : 'calculate'}',
+        data: {
+          'origin': {'lat': origin.latitude, 'lon': origin.longitude},
+          'destination': destination.toJson()['coordinate'],
+          'vehicle': 'car',
+        },
+      );
+      final routes = fastestRoutes(
+        (r.data['routes'] as List).map((j) => TravelRoute.fromJson(j)).toList(),
+      );
+      PerformanceLog.instance.record(
+        refresh ? 'routing.refresh' : 'routing.calculate',
+        clock.elapsedMicroseconds / 1000,
+      );
+      return routes;
+    } catch (_) {
+      PerformanceLog.instance.record(
+        refresh ? 'routing.refresh' : 'routing.calculate',
+        clock.elapsedMicroseconds / 1000,
+        failed: true,
+      );
+      rethrow;
+    }
   }
 
   static const storage = FlutterSecureStorage();

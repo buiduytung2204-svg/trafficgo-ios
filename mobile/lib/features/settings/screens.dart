@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/state.dart';
 import '../../core/api.dart';
+import '../../core/performance.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -14,6 +15,31 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Cài đặt')),
       body: ListView(
         children: [
+          ListTile(
+            leading: const Icon(Icons.speed),
+            title: const Text('Chẩn đoán hiệu năng'),
+            subtitle: const Text(
+              'Số liệu cục bộ, không chứa vị trí hoặc token',
+            ),
+            onTap: () => showDialog<void>(
+              context: context,
+              builder: (c) => AlertDialog(
+                title: const Text('Hiệu năng phiên chạy'),
+                content: SizedBox(
+                  width: 600,
+                  child: SingleChildScrollView(
+                    child: SelectableText(PerformanceLog.instance.json),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(c),
+                    child: const Text('Đóng'),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const ListTile(
             title: Text('Kết nối riêng tư'),
             subtitle: Text(apiBase),

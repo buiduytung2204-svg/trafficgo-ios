@@ -20,3 +20,7 @@ Flutter + FastAPI cho bản đồ/giao thông Hà Nội, tập trung iPhone. Đ�
 Không có voice navigation, background tracking, đăng nhập/sync UI hoặc offline map. Tuyến thường dùng chỉ lưu hai điểm, khi chọn sẽ tính lại từ GPS. Limiter phù hợp một worker; bộ đếm ngân sách/ngày được lưu cục bộ qua restart. Triển khai backend public cần hard quota/gateway và authentication thiết bị. Không coi configured là provider verified.
 
 Kiểm tra gần nhất: `flutter analyze` sạch, 18 Flutter tests và 16 backend tests đạt; build Web thành công. Cấu hình Codemagic có sẵn, chưa có IPA đã ký.
+
+## Audit hiệu năng trên nhánh riêng
+
+Xem [báo cáo baseline và cải tiến](docs/PERFORMANCE_AUDIT.md), [số liệu HTTP trước sửa](docs/benchmarks/baseline-http.json) và [sau sửa](docs/benchmarks/after-http.json). Nhánh audit thêm Valhalla cấu hình được, nguồn nền OSM tùy chọn, metrics và giảm request traffic; TomTom vẫn là mặc định. Các tính năng mới không tự đăng ký dịch vụ, đổi key hoặc bật thanh toán. Kết quả kiểm tra mới nhất của nhánh audit được ghi trong PROGRESS.md.

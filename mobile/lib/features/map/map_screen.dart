@@ -13,9 +13,14 @@ import '../../core/api.dart';
 import '../../core/models.dart';
 import '../../core/tile_client.dart';
 import 'camera_session.dart';
+import 'base_map.dart';
+import 'traffic_refresh.dart';
+import '../../core/performance.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
-  const MapScreen({super.key});
+  final BaseMapSource? source;
+  const MapScreen({super.key, this.source});
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
@@ -26,6 +31,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
   final query = TextEditingController();
   final hanoi = const LatLng(21.0285, 105.8542);
   late final CameraSession cameraSession;
+  late final BaseMapSource baseMap;
+  late final TrafficRefreshPolicy trafficRefresh;
+  bool get trafficAvailable =>
+      baseMap.usesTomTom ||
+      const bool.fromEnvironment('EXTERNAL_BASEMAP_TRAFFIC_APPROVED');
   LatLng? location;
   double heading = 0;
   Place? destination;
@@ -67,6 +77,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   void initState() {
     super.initState();
     cameraSession = ref.read(cameraSessionProvider);
+    baseMap = widget.source ?? BaseMapSource.configured();
+    trafficRefresh = TrafficRefreshPolicy(DateTime.now());
+    WidgetsBinding.instance.addTimingsCallback(PerformanceLog.instance.frames);
     mapClient = TileClient(
       () {},
       onFailure: (message) => tileFailure('Bản đồ: $message'),
@@ -81,8 +94,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     }, onFailure: (message) => tileFailure('Traffic: $message'));
     WidgetsBinding.instance.addObserver(this);
-    refreshTimer = Timer.periodic(const Duration(minutes: 2), (_) {
-      if (mounted && foreground && ref.read(stateProvider).traffic) {
+    refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      final now = DateTime.now();
+      if (mounted &&
+          trafficRefresh.shouldRefresh(
+            now,
+            foreground:
+                foreground && (ModalRoute.of(context)?.isCurrent ?? true),
+            enabled: ref.read(stateProvider).traffic && trafficAvailable,
+            navigating: navigating,
+            blocked: trafficClient.blockedUntil?.isAfter(now) ?? false,
+          )) {
+        trafficRefresh.refreshed(now);
+        PerformanceLog.instance.phase = 'traffic_refresh';
         setState(() {
           trafficEpoch++;
           lastTileReceived = null;
@@ -94,6 +118,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance.removeTimingsCallback(
+      PerformanceLog.instance.frames,
+    );
     debounce?.cancel();
     refreshTimer?.cancel();
     searchCancel?.cancel();
@@ -266,6 +293,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       if (!mounted) return;
       setState(() {
         navigating = true;
+        PerformanceLog.instance.phase = 'navigation';
         cameraSession.following = true;
         lastRefresh = DateTime.now();
         error = null;
@@ -437,11 +465,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         title: Text(copyrightCaption),
         content: SingleChildScrollView(
           child: SelectableText(
-            copyright == null
-                ? 'Chưa tải được thông tin bản quyền.'
-                : const JsonEncoder.withIndent(
-                    '  ',
-                  ).convert(copyright!['notices']),
+            '${baseMap.attribution}\n${baseMap.usesTomTom ? '' : 'https://www.openstreetmap.org/copyright\n'}${copyright == null ? 'Chưa tải được thông tin bản quyền.' : const JsonEncoder.withIndent('  ').convert(copyright!['notices'])}',
           ),
         ),
         actions: [
@@ -474,7 +498,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
               initialZoom: cameraSession.zoom,
               initialRotation: cameraSession.rotation,
               keepAlive: true,
+              onMapReady: () {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  PerformanceLog.instance.firstMapFrameMs ??=
+                      PerformanceLog.instance.started.elapsedMicroseconds /
+                      1000;
+                });
+              },
               onPositionChanged: (camera, hasGesture) {
+                if (hasGesture) {
+                  PerformanceLog.instance.phase =
+                      camera.zoom != cameraSession.zoom ? 'zoom' : 'pan';
+                  trafficRefresh.interact(DateTime.now());
+                }
                 final wasFollowing = cameraSession.following;
                 cameraSession.update(
                   camera.center,
@@ -491,16 +527,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
             children: [
-              if (state.token.isNotEmpty)
+              if (state.token.isNotEmpty || !baseMap.usesTomTom)
                 TileLayer(
                   key: ValueKey('map-${state.token}'),
                   panBuffer: 0,
                   tileUpdateTransformer: mapTileUpdates,
-                  urlTemplate: '$apiBase/api/v1/tiles/map/{z}/{x}/{y}.png',
+                  urlTemplate: baseMap.usesTomTom
+                      ? '$apiBase/api/v1/tiles/map/{z}/{x}/{y}.png'
+                      : baseMap.url,
+                  tileBuilder: (context, child, tile) {
+                    if (tile.loadFinishedAt != null && !tile.loadError) {
+                      PerformanceLog.instance.decodedTile();
+                    }
+                    return child;
+                  },
                   tileProvider: NetworkTileProvider(
                     httpClient: mapClient,
                     cachingProvider: const DisabledMapCachingProvider(),
-                    headers: {'X-App-Token': state.token},
+                    headers: baseMap.usesTomTom
+                        ? {'X-App-Token': state.token}
+                        : {},
                   ),
                   userAgentPackageName: 'vn.trafficgo.trafficgo',
                   errorTileCallback: (_, e, stack) {
@@ -516,13 +562,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     }
                   },
                 ),
-              if (state.token.isNotEmpty && state.traffic)
+              if (state.token.isNotEmpty && state.traffic && trafficAvailable)
                 TileLayer(
                   key: ValueKey('traffic-$trafficEpoch-${state.token}'),
                   panBuffer: 0,
                   tileUpdateTransformer: trafficTileUpdates,
                   urlTemplate:
                       '$apiBase/api/v1/tiles/traffic/{z}/{x}/{y}.png?epoch=$trafficEpoch',
+                  tileBuilder: (context, child, tile) {
+                    if (tile.loadFinishedAt != null && !tile.loadError) {
+                      PerformanceLog.instance.decodedTile();
+                    }
+                    return child;
+                  },
                   tileProvider: NetworkTileProvider(
                     httpClient: trafficClient,
                     cachingProvider: const DisabledMapCachingProvider(),
@@ -598,6 +650,47 @@ class _MapScreenState extends ConsumerState<MapScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (!baseMap.usesTomTom)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        children: [
+                          if (baseMap.name == 'stadia_dev')
+                            TextButton(
+                              onPressed: () => launchUrl(
+                                Uri.parse('https://stadiamaps.com/'),
+                              ),
+                              child: const Text(
+                                '© Stadia Maps',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                            ),
+                          if (baseMap.name == 'stadia_dev')
+                            TextButton(
+                              onPressed: () => launchUrl(
+                                Uri.parse('https://openmaptiles.org/'),
+                              ),
+                              child: const Text(
+                                '© OpenMapTiles',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                            ),
+                          TextButton(
+                            onPressed: () => launchUrl(
+                              Uri.parse(
+                                'https://www.openstreetmap.org/copyright',
+                              ),
+                            ),
+                            child: Text(
+                              baseMap.name == 'stadia_dev'
+                                  ? '© OpenStreetMap contributors'
+                                  : baseMap.attribution,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   Row(
                     children: [
                       const Icon(Icons.explore, color: Color(0xff007c78)),
@@ -735,6 +828,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   'Tải lại bản đồ',
                   () => setState(() {
                     trafficEpoch++;
+                    trafficRefresh.refreshed(DateTime.now());
                     tileError = null;
                   }),
                 ),
@@ -902,7 +996,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                       ),
                     Text(
-                      'Tuyến tải lúc ${current!.retrievedAt.toLocal().toString().substring(11, 19)}. ETA là ước tính của provider.',
+                      '${current!.provider} • ${current!.trafficAware ? 'ETA có xét traffic' : 'ETA KHÔNG có traffic realtime'} • tải ${current!.retrievedAt.toLocal().toString().substring(11, 19)}${current!.fallbackReason == null ? '' : ' • dùng provider dự phòng'}',
                     ),
                     if (navigating) ...[
                       if (refreshedProposal != null)
@@ -942,7 +1036,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       label: const Text('Tìm đường từ vị trí của tôi'),
                     ),
                   const SizedBox(height: 12),
-                  if (state.traffic) ...[
+                  if (state.traffic && !trafficAvailable)
+                    const Text(
+                      'Traffic trên nguồn nền ngoài đang tắt: cần xác nhận điều khoản kết hợp dữ liệu trước khi bật.',
+                    ),
+                  if (state.traffic && trafficAvailable) ...[
                     Text(
                       lastTileReceived == null
                           ? 'Chưa nhận được tile giao thông trong phiên làm mới này.'
@@ -966,7 +1064,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Làm mới lớp traffic mỗi 2 phút khi mở app. Provider không cung cấp thời điểm đo trong raster tile.',
+                      'Traffic chỉ tự làm mới khi đang điều hướng hoặc vừa tương tác. Khi đứng yên, nhấn tải lại nếu cần dữ liệu mới. Thời điểm nhận tile không phải thời điểm đo.',
                       style: TextStyle(fontSize: 11),
                     ),
                   ],

@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from typing import Literal
 
 
 class Settings(BaseSettings):
@@ -12,6 +13,9 @@ class Settings(BaseSettings):
     api_requests_per_minute: int = Field(default=180, ge=1)
     tile_requests_per_minute: int = Field(default=600, ge=1)
     provider_budget_file: str = '.provider-budget.json'
+    routing_provider: Literal['tomtom', 'valhalla'] = 'tomtom'
+    valhalla_base_url: str = ''
+    routing_fallback_to_tomtom: bool = False
     jwt_secret: str = ''
     jwt_issuer: str = 'trafficgo'
     jwt_audience: str = 'trafficgo'

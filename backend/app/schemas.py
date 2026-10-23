@@ -35,6 +35,8 @@ class Route(BaseModel):
     provider: str = 'tomtom'
     retrieved_at: datetime
     vehicle: str
+    traffic_aware: bool = True
+    fallback_reason: str | None = None
 
 
 class SavedPlace(BaseModel):

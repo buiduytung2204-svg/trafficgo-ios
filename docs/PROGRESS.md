@@ -1,5 +1,11 @@
 # TrafficGo — trạng thái ngày 23/10/2026
 
+## Audit trên nhánh audit/traffic-performance
+
+Baseline HTTP được đo trên bd36263 trước sửa; báo cáo và artifacts ở docs/PERFORMANCE_AUDIT.md và docs/benchmarks/. Đã thêm coalescing in-flight (không cache), metrics bounded và Server-Timing, giảm refresh traffic idle/hidden/blocked, nguồn raster OSM cấu hình có attribution và không gửi app token, Valhalla adapter/fallback explicit với nhãn ETA không traffic. Traffic trên nền ngoài cần flag xác nhận license; không bật xe máy. Không đổi .env/key/budget, không đăng ký dịch vụ, không push/merge/deploy. codemagic.yaml và main commit bd36263 được giữ nguyên. Live TomTom trace lỗi 0%; duplicate burst 4→1 upstream. Valhalla live, browser full-map render và iPhone chưa đo được; không thay bằng dữ liệu giả. Kiểm tra cuối cập nhật sau khi hoàn tất build.
+
+Kiểm tra cuối audit: `flutter analyze --no-pub` sạch; `flutter test --no-pub`: 24 passed; `pytest -q`: 26 passed, 1 deprecation warning TestClient. Build Web riêng `build/web-audit` và `build/web-osm-audit` đều thành công. Codemagic YAML parse được hai workflows, diff so với main rỗng; `scripts/check_ios_config.py` pass. Plugin url_launcher iOS yêu cầu iOS 13, tương thích target 15 theo cấu hình; chưa có Xcode compile/signing. Shell benchmark có artifacts trước/sau, không imagery/GPU và không thay phép đo browser thực. Tạo commit cục bộ riêng trên nhánh audit sau khi quét secrets; không push.
+
 ## Repository public
 
 Theo yêu cầu người dùng, source đã được đẩy lên https://github.com/buiduytung2204-svg/trafficgo-ios, nhánh main. Tên trafficgo đã tồn tại nên dùng trafficgo-ios; không sửa repo cũ. Trước khi push đã quét 113 file trong commit, không có API key/access token cấu hình thật. .env, bộ đếm quota, virtualenv, build artifacts và signing credentials bị Git bỏ qua. Các ghi chú “chưa push” bên dưới là lịch sử trước yêu cầu công khai repository; không đồng nghĩa đã deploy backend hoặc phát hành app.

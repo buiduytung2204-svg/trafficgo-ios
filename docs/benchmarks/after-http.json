@@ -1,0 +1,493 @@
+{
+  "revision": "bd36263",
+  "method": "controlled local HTTP trace; NOT browser gestures, rendering or real GPS navigation",
+  "samples": [
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 1434.51,
+      "bytes": 65080,
+      "server_timing": "backend_total;dur=1171.404, upstream;dur=1165.383",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 1490.35,
+      "bytes": 83973,
+      "server_timing": "backend_total;dur=1228.006, upstream;dur=1224.799",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 1575.3,
+      "bytes": 89614,
+      "server_timing": "backend_total;dur=1569.925, upstream;dur=1566.952",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 1842.96,
+      "bytes": 69455,
+      "server_timing": "backend_total;dur=1581.168, upstream;dur=1573.890",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 272.24,
+      "bytes": 9266,
+      "server_timing": "backend_total;dur=259.293, upstream;dur=252.757",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 292.92,
+      "bytes": 14473,
+      "server_timing": "backend_total;dur=280.470, upstream;dur=277.635",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 325.44,
+      "bytes": 26301,
+      "server_timing": "backend_total;dur=317.665, upstream;dur=314.337",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 359.21,
+      "bytes": 16170,
+      "server_timing": "backend_total;dur=346.418, upstream;dur=337.466",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 333.17,
+      "bytes": 65080,
+      "server_timing": "backend_total;dur=328.203, upstream;dur=326.116",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 453.93,
+      "bytes": 69455,
+      "server_timing": "backend_total;dur=446.669, upstream;dur=439.654",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 529.79,
+      "bytes": 61910,
+      "server_timing": "backend_total;dur=523.120, upstream;dur=518.480",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 653.11,
+      "bytes": 71772,
+      "server_timing": "backend_total;dur=645.952, upstream;dur=636.174",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 261.0,
+      "bytes": 14928,
+      "server_timing": "backend_total;dur=251.762, upstream;dur=246.077",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 290.55,
+      "bytes": 14473,
+      "server_timing": "backend_total;dur=281.457, upstream;dur=278.495",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 306.88,
+      "bytes": 9266,
+      "server_timing": "backend_total;dur=301.692, upstream;dur=299.464",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 345.46,
+      "bytes": 5820,
+      "server_timing": "backend_total;dur=335.724, upstream;dur=329.506",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 299.37,
+      "bytes": 79433,
+      "server_timing": "backend_total;dur=290.744, upstream;dur=287.906",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 476.35,
+      "bytes": 69395,
+      "server_timing": "backend_total;dur=468.116, upstream;dur=461.363",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 613.22,
+      "bytes": 76963,
+      "server_timing": "backend_total;dur=607.032, upstream;dur=604.877",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 677.75,
+      "bytes": 80314,
+      "server_timing": "backend_total;dur=669.052, upstream;dur=661.255",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 271.07,
+      "bytes": 14309,
+      "server_timing": "backend_total;dur=262.424, upstream;dur=256.557",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 269.94,
+      "bytes": 20565,
+      "server_timing": "backend_total;dur=261.563, upstream;dur=259.140",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 323.6,
+      "bytes": 12024,
+      "server_timing": "backend_total;dur=318.460, upstream;dur=316.163",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 351.6,
+      "bytes": 15261,
+      "server_timing": "backend_total;dur=343.560, upstream;dur=336.726",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 337.93,
+      "bytes": 76963,
+      "server_timing": "backend_total;dur=333.173, upstream;dur=330.921",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 411.47,
+      "bytes": 79433,
+      "server_timing": "backend_total;dur=402.384, upstream;dur=393.844",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 501.16,
+      "bytes": 69395,
+      "server_timing": "backend_total;dur=493.646, upstream;dur=486.485",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 599.37,
+      "bytes": 80314,
+      "server_timing": "backend_total;dur=591.630, upstream;dur=588.257",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 280.05,
+      "bytes": 14309,
+      "server_timing": "backend_total;dur=271.105, upstream;dur=265.536",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 280.02,
+      "bytes": 15261,
+      "server_timing": "backend_total;dur=270.722, upstream;dur=263.600",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 314.16,
+      "bytes": 12024,
+      "server_timing": "backend_total;dur=309.459, upstream;dur=306.983",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 349.02,
+      "bytes": 20565,
+      "server_timing": "backend_total;dur=340.620, upstream;dur=332.488",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "route",
+      "kind": "routing",
+      "status": 200,
+      "ms": 400.2,
+      "bytes": 28276,
+      "server_timing": "backend_total;dur=396.957, upstream;dur=389.245",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "duplicates",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 354.09,
+      "bytes": 26301,
+      "server_timing": "backend_total;dur=347.853, upstream;dur=345.601",
+      "rate_limit_bucket": null,
+      "coalesced": false
+    },
+    {
+      "phase": "duplicates",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 353.73,
+      "bytes": 26301,
+      "server_timing": "backend_total;dur=343.663, upstream;dur=0.000",
+      "rate_limit_bucket": null,
+      "coalesced": true
+    },
+    {
+      "phase": "duplicates",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 352.8,
+      "bytes": 26301,
+      "server_timing": "backend_total;dur=341.971, upstream;dur=0.000",
+      "rate_limit_bucket": null,
+      "coalesced": true
+    },
+    {
+      "phase": "duplicates",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 353.65,
+      "bytes": 26301,
+      "server_timing": "backend_total;dur=342.235, upstream;dur=0.000",
+      "rate_limit_bucket": null,
+      "coalesced": true
+    }
+  ],
+  "summary": {
+    "open": {
+      "requests": 8,
+      "p50_ms": 359.21,
+      "p95_ms": 1842.96,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "pan": {
+      "requests": 8,
+      "p50_ms": 333.17,
+      "p95_ms": 653.11,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "zoom": {
+      "requests": 8,
+      "p50_ms": 323.6,
+      "p95_ms": 677.75,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "navigation_refresh": {
+      "requests": 8,
+      "p50_ms": 337.93,
+      "p95_ms": 599.37,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "route": {
+      "requests": 1,
+      "p50_ms": 400.2,
+      "p95_ms": 400.2,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "duplicates": {
+      "requests": 4,
+      "p50_ms": 353.65,
+      "p95_ms": 354.09,
+      "errors": 0,
+      "error_rate": 0.0
+    }
+  },
+  "provider_request_counts": {
+    "tomtom.map": 16,
+    "tomtom.traffic": 17,
+    "tomtom.routing": 1
+  },
+  "render_ms": null,
+  "diagnostics_after": {
+    "metrics": {
+      "tomtom.map": {
+        "requests": 16,
+        "errors": 0,
+        "rate_limited": 0,
+        "sample_count": 16,
+        "p50_ms": 518.48,
+        "p95_ms": 1573.89,
+        "error_rate": 0.0
+      },
+      "backend.map_tile": {
+        "requests": 16,
+        "errors": 0,
+        "rate_limited": 0,
+        "sample_count": 16,
+        "p50_ms": 523.12,
+        "p95_ms": 1581.168,
+        "error_rate": 0.0
+      },
+      "tomtom.traffic": {
+        "requests": 17,
+        "errors": 0,
+        "rate_limited": 0,
+        "sample_count": 17,
+        "p50_ms": 299.464,
+        "p95_ms": 345.601,
+        "error_rate": 0.0
+      },
+      "backend.traffic_tile": {
+        "requests": 20,
+        "errors": 0,
+        "rate_limited": 0,
+        "sample_count": 20,
+        "p50_ms": 309.459,
+        "p95_ms": 346.418,
+        "error_rate": 0.0
+      },
+      "tomtom.routing": {
+        "requests": 1,
+        "errors": 0,
+        "rate_limited": 0,
+        "sample_count": 1,
+        "p50_ms": 389.245,
+        "p95_ms": 389.245,
+        "error_rate": 0.0
+      },
+      "backend.routing": {
+        "requests": 1,
+        "errors": 0,
+        "rate_limited": 0,
+        "sample_count": 1,
+        "p50_ms": 396.957,
+        "p95_ms": 396.957,
+        "error_rate": 0.0
+      }
+    },
+    "budget": {
+      "date": "2026-10-23",
+      "used": 3462,
+      "limit": 5000
+    },
+    "storage": "bounded process memory; latency sample window 2000/category"
+  },
+  "branch": "audit/traffic-performance",
+  "working_tree_modified": true,
+  "source_note": "Measured audit working tree before local commit; revision is the common baseline ancestor."
+}

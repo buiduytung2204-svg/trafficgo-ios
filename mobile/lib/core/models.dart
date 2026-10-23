@@ -42,6 +42,9 @@ class TravelRoute {
   final List<LatLng> points;
   final List<dynamic> instructions;
   final DateTime retrievedAt;
+  final String provider;
+  final bool trafficAware;
+  final String? fallbackReason;
   const TravelRoute({
     required this.id,
     required this.meters,
@@ -50,6 +53,9 @@ class TravelRoute {
     required this.retrievedAt,
     this.delay,
     this.instructions = const [],
+    this.provider = 'tomtom',
+    this.trafficAware = true,
+    this.fallbackReason,
   });
   factory TravelRoute.fromJson(Map<String, dynamic> j) => TravelRoute(
     id: j['id'],
@@ -66,6 +72,9 @@ class TravelRoute {
         .toList(),
     instructions: j['instructions'] as List? ?? [],
     retrievedAt: DateTime.parse(j['retrieved_at']),
+    provider: j['provider'] ?? 'tomtom',
+    trafficAware: j['traffic_aware'] ?? true,
+    fallbackReason: j['fallback_reason'],
   );
 }
 

@@ -20,6 +20,9 @@ from app.config import settings
 from app.database import User, SavedPlaceRow, SettingsRow
 from app.schemas import RouteRequest, SavedPlace, UserSettings
 from app.providers.routing import TomTomRoutingProvider
+from app.providers.valhalla import ValhallaRoutingProvider, FallbackRoutingProvider
+from app.tile_requests import TileRequests
+from app.metrics import metrics, request_upstream
 
 logging.getLogger('httpx').setLevel(logging.WARNING)
 engine = create_engine(settings.database_url, pool_pre_ping=True)
@@ -44,13 +47,16 @@ async def lifespan(app):
     async with httpx.AsyncClient(timeout=httpx.Timeout(12), follow_redirects=False) as client:
         app.state.provider = TomTomRoutingProvider(client, settings.tomtom_api_key,
                                                    before_attempt=lambda: reserve_attempts(1))
+        app.state.routing = FallbackRoutingProvider(ValhallaRoutingProvider(client, settings.valhalla_base_url),
+            app.state.provider if settings.routing_fallback_to_tomtom else None)
+        app.state.tile_requests = TileRequests()
         yield
 
 
 app = FastAPI(title='TrafficGo API', version='0.1.0', lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                    allow_methods=['GET', 'POST', 'PATCH', 'DELETE'],
-                   expose_headers=['Retry-After', 'X-RateLimit-Bucket'],
+                   expose_headers=['Retry-After', 'X-RateLimit-Bucket', 'Server-Timing', 'X-Tile-Coalesced'],
                    allow_headers=['Authorization', 'X-App-Token', 'Content-Type'])
 
 
@@ -64,9 +70,23 @@ async def limit_body(request: Request, call_next):
         return Response(status_code=400)
     if length > 32768:
         return Response(status_code=413)
-    response = await call_next(request)
+    start = time.perf_counter()
+    upstream = []
+    token = request_upstream.set(upstream)
+    try:
+        response = await call_next(request)
+    finally:
+        request_upstream.reset(token)
+    duration = (time.perf_counter()-start)*1000
+    response.headers['Server-Timing'] = f'backend_total;dur={duration:.3f}, upstream;dur={sum(upstream):.3f}'
     response.headers['Cache-Control'] = 'no-store'
     route = request.scope.get('route')
+    path = getattr(route, 'path', 'unmatched')
+    category = ('traffic_tile' if '/tiles/' in path and request.path_params.get('kind') == 'traffic' else
+                'map_tile' if '/tiles/' in path else 'routing' if '/routes/' in path else
+                'search' if '/places/search' in path else 'other')
+    if path != '/api/v1/diagnostics':
+        metrics.record('backend.'+category, duration, response.status_code)
     logger.info('request method=%s route=%s status=%s', request.method,
                 getattr(route, 'path', 'unmatched'), response.status_code)
     return response
@@ -169,6 +189,12 @@ def traffic_status():
             'message': 'Thời điểm tải tile không phải thời điểm đo giao thông'}
 
 
+@app.get('/api/v1/diagnostics', dependencies=[Depends(access)])
+def diagnostics():
+    return {'metrics': metrics.snapshot(), 'budget': {'date':daily['date'], 'used':daily['count'],
+        'limit':settings.daily_provider_budget}, 'storage':'bounded process memory; latency sample window 2000/category'}
+
+
 @app.get('/api/v1/attribution')
 async def attribution(p=Depends(provider)):
     try:
@@ -180,16 +206,17 @@ async def attribution(p=Depends(provider)):
 
 
 @app.get('/api/v1/tiles/{kind}/{z}/{x}/{y}.png')
-async def tiles(kind: str, z: int, x: int, y: int, p=Depends(provider)):
+async def tiles(kind: str, z: int, x: int, y: int, request: Request, p=Depends(provider)):
     if kind not in ('map', 'traffic') or not 0 <= z <= 18 or not 0 <= x < 2**z or not 0 <= y < 2**z:
         raise HTTPException(422, 'Tile không hợp lệ')
     path = (f'map/1/tile/basic/main/{z}/{x}/{y}.png' if kind == 'map' else
             f'traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png')
-    result = await p.get(path, {'tileSize': 256})
+    result, joined = await request.app.state.tile_requests.get((kind,z,x,y), lambda: p.get(path, {'tileSize':256}))
     if 'image/png' not in result.headers.get('content-type', ''):
         raise HTTPException(502, 'Tile không hợp lệ')
     return Response(result.content, media_type='image/png', headers={
-        'Cache-Control': 'no-store', 'X-Retrieved-At': datetime.now(timezone.utc).isoformat()})
+        'Cache-Control': 'no-store', 'X-Tile-Coalesced':str(joined).lower(),
+        'X-Retrieved-At': datetime.now(timezone.utc).isoformat()})
 
 
 @app.get('/api/v1/places/search')
@@ -212,8 +239,15 @@ async def search(q: str = Query(min_length=2, max_length=120),
 
 @app.post('/api/v1/routes/calculate')
 @app.post('/api/v1/routes/refresh')
-async def routes(body: RouteRequest, p=Depends(provider)):
-    return {'routes': await p.calculate(body)}
+async def routes(body: RouteRequest, request: Request, _: None=Depends(access)):
+    if body.vehicle != 'car':
+        raise HTTPException(422, 'Xe máy chưa được xác minh tại Việt Nam')
+    if settings.routing_provider == 'tomtom':
+        reserve_attempts(0)
+        selected = request.app.state.provider
+    else:
+        selected = request.app.state.routing
+    return {'routes': await selected.calculate(body)}
 
 
 @app.get('/api/v1/saved-places')

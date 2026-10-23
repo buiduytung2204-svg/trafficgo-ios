@@ -3,8 +3,10 @@ from datetime import datetime, timezone
 from uuid import uuid4
 import asyncio
 import httpx
+import time
 from fastapi import HTTPException
 from app.schemas import Route, RouteRequest
+from app.metrics import metrics
 
 
 class RoutingProvider(ABC):
@@ -23,23 +25,35 @@ class TomTomRoutingProvider(RoutingProvider):
         for attempt in range(2):
             if self.before_attempt:
                 self.before_attempt()
+            started = time.perf_counter()
+            status = 502
+            category = ('traffic' if path.startswith('traffic/') else 'map' if '/tile/' in path else
+                        'search' if path.startswith('search/') else 'routing' if path.startswith('routing/') else 'attribution')
             try:
                 response = await asyncio.wait_for(
                     self.client.get('https://api.tomtom.com/' + path,
                                     params={**params, 'key': self.key}), timeout=10)
+                status = response.status_code
             except (httpx.TimeoutException, TimeoutError):
+                status = 504
                 if attempt == 0:
                     await asyncio.sleep(0.25)
                     continue
                 raise HTTPException(504, 'Nhà cung cấp hết thời gian phản hồi') from None
             except httpx.RequestError:
                 raise HTTPException(502, 'Không kết nối được nhà cung cấp') from None
+            finally:
+                metrics.record('tomtom.' + category, (time.perf_counter()-started)*1000, status)
             if response.status_code >= 500 and attempt == 0:
                 await asyncio.sleep(0.25)
                 continue
             if response.status_code != 200:
                 code = 429 if response.status_code == 429 else 502
-                raise HTTPException(code, 'Nhà cung cấp từ chối yêu cầu; kiểm tra quota và cấu hình')
+                headers = {'X-RateLimit-Bucket': 'tomtom'} if code == 429 else None
+                if headers is not None:
+                    retry = response.headers.get('Retry-After', '60')
+                    headers['Retry-After'] = retry if retry.isdigit() else '60'
+                raise HTTPException(code, 'Nhà cung cấp từ chối yêu cầu; kiểm tra quota và cấu hình', headers=headers)
             return response
         raise HTTPException(502, 'Nhà cung cấp không khả dụng')
 

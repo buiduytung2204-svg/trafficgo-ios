@@ -1,0 +1,22 @@
+{
+  "method": "4 concurrent identical traffic tile HTTP requests, baseline original process",
+  "requests": [
+    {
+      "status": 200,
+      "ms": 1711.05
+    },
+    {
+      "status": 200,
+      "ms": 1502.11
+    },
+    {
+      "status": 200,
+      "ms": 1350.75
+    },
+    {
+      "status": 200,
+      "ms": 1556.19
+    }
+  ],
+  "provider_attempts_budget_delta": 4
+}

@@ -1,0 +1,14 @@
+{
+  "method": "Flutter test software-rendered map shell, 390x844, no imagery/network/GPS; excludes first warmup",
+  "samples_ms": [
+    144.428,
+    185.111,
+    186.807,
+    189.713,
+    224.583
+  ],
+  "p50_ms": 186.807,
+  "p95_ms": 224.583,
+  "full_map_render_ms": null,
+  "device_gpu_ms": null
+}

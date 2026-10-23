@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'performance.dart';
 
 /// No retries here: backend owns the bounded upstream retry budget.
 class TileClient extends http.BaseClient {
@@ -19,9 +20,47 @@ class TileClient extends http.BaseClient {
         headers: {'content-type': 'application/json'},
       );
     }
-    final response = await _inner
-        .send(request)
-        .timeout(const Duration(seconds: 30));
+    final clock = Stopwatch()..start();
+    final phase = PerformanceLog.instance.phase;
+    final kind = request.url.path.contains('/traffic/') ? 'traffic' : 'map';
+    late http.StreamedResponse response;
+    try {
+      final raw = await _inner
+          .send(request)
+          .timeout(const Duration(seconds: 30));
+      final bytes = await raw.stream.toBytes().timeout(
+        const Duration(seconds: 30),
+      );
+      response = http.StreamedResponse(
+        Stream.value(bytes),
+        raw.statusCode,
+        headers: raw.headers,
+        request: raw.request,
+        reasonPhrase: raw.reasonPhrase,
+      );
+      PerformanceLog.instance.record(
+        '$phase.tile.$kind',
+        clock.elapsedMicroseconds / 1000,
+        failed: raw.statusCode >= 400,
+      );
+      final timing = raw.headers['server-timing'] ?? '';
+      for (final component in ['backend_total', 'upstream']) {
+        final match = RegExp('$component;dur=([0-9.]+)').firstMatch(timing);
+        if (match != null) {
+          PerformanceLog.instance.record(
+            '$phase.$component.$kind',
+            double.parse(match.group(1)!),
+          );
+        }
+      }
+    } catch (_) {
+      PerformanceLog.instance.record(
+        '$phase.tile.$kind',
+        clock.elapsedMicroseconds / 1000,
+        failed: true,
+      );
+      rethrow;
+    }
     if (response.statusCode == 200) onReceived();
     if (response.statusCode >= 400) {
       final bytes = await response.stream.toBytes();

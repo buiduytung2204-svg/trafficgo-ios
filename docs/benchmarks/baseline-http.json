@@ -1,0 +1,271 @@
+{
+  "revision": "bd36263",
+  "method": "controlled HTTP trace, 2x2 tiles/layer, NOT browser gestures or render timing",
+  "samples": [
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 1870.02,
+      "bytes": 89614
+    },
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 1993.35,
+      "bytes": 65080
+    },
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 2323.42,
+      "bytes": 69455
+    },
+    {
+      "phase": "open",
+      "kind": "map",
+      "status": 200,
+      "ms": 2379.02,
+      "bytes": 83973
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 298.25,
+      "bytes": 26821
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 419.24,
+      "bytes": 16877
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 421.85,
+      "bytes": 9383
+    },
+    {
+      "phase": "open",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 453.5,
+      "bytes": 14279
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 1233.71,
+      "bytes": 65080
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 1374.66,
+      "bytes": 69455
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 1376.34,
+      "bytes": 61910
+    },
+    {
+      "phase": "pan",
+      "kind": "map",
+      "status": 200,
+      "ms": 1379.09,
+      "bytes": 71772
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 252.6,
+      "bytes": 9383
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 316.78,
+      "bytes": 5823
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 365.15,
+      "bytes": 14279
+    },
+    {
+      "phase": "pan",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 366.7,
+      "bytes": 15311
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 324.62,
+      "bytes": 76963
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 616.01,
+      "bytes": 80314
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 740.15,
+      "bytes": 79433
+    },
+    {
+      "phase": "zoom",
+      "kind": "map",
+      "status": 200,
+      "ms": 945.83,
+      "bytes": 69395
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 288.33,
+      "bytes": 12109
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 373.73,
+      "bytes": 13256
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 421.18,
+      "bytes": 20544
+    },
+    {
+      "phase": "zoom",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 422.78,
+      "bytes": 15631
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 353.77,
+      "bytes": 76963
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 769.31,
+      "bytes": 79433
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 802.96,
+      "bytes": 69395
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "map",
+      "status": 200,
+      "ms": 951.81,
+      "bytes": 80314
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 299.57,
+      "bytes": 12109
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 299.23,
+      "bytes": 15631
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 394.99,
+      "bytes": 13256
+    },
+    {
+      "phase": "navigation_refresh",
+      "kind": "traffic",
+      "status": 200,
+      "ms": 445.02,
+      "bytes": 20544
+    },
+    {
+      "phase": "route",
+      "kind": "routing",
+      "status": 200,
+      "ms": 351.68,
+      "bytes": 26638
+    }
+  ],
+  "summary": {
+    "open": {
+      "requests": 8,
+      "p50_ms": 453.5,
+      "p95_ms": 2379.02,
+      "errors": 0
+    },
+    "pan": {
+      "requests": 8,
+      "p50_ms": 366.7,
+      "p95_ms": 1379.09,
+      "errors": 0
+    },
+    "zoom": {
+      "requests": 8,
+      "p50_ms": 421.18,
+      "p95_ms": 945.83,
+      "errors": 0
+    },
+    "navigation_refresh": {
+      "requests": 8,
+      "p50_ms": 394.99,
+      "p95_ms": 951.81,
+      "errors": 0
+    },
+    "route": {
+      "requests": 1,
+      "p50_ms": 351.68,
+      "p95_ms": 351.68,
+      "errors": 0
+    }
+  },
+  "render_ms": null,
+  "tomtom_internal_ms": null
+}
