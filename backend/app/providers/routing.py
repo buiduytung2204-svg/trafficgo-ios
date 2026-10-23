@@ -56,18 +56,17 @@ class ValhallaRoutingProvider(RoutingProvider):
         self.client, self.base_url = client, base_url.rstrip('/')
 
     async def calculate(self, request: RouteRequest) -> list[Route]:
-        if request.vehicle != 'car':
-            raise HTTPException(422, 'Xe máy chưa được xác minh tại Việt Nam')
         url = urlparse(self.base_url)
         if url.scheme not in ('http', 'https') or not url.hostname or url.username or url.password or url.query or url.fragment:
             raise HTTPException(503, 'Chưa cấu hình endpoint Valhalla tin cậy')
+        profile = 'motor_scooter' if request.vehicle == 'motorcycle' else 'auto'
         options = {}
         if request.avoid_tolls:
             options['use_tolls'] = 0
         if request.avoid_highways:
             options['use_highways'] = 0
         body = {'locations': [request.origin.model_dump(), request.destination.model_dump()],
-                'costing': 'auto', 'costing_options': {'auto': options},
+                'costing': profile, 'costing_options': {profile: options},
                 'format': 'json', 'units': 'kilometers', 'language': 'en-US', 'alternates': 2}
         if request.departure:
             body['date_time'] = {'type': 1, 'value': request.departure.astimezone(ZoneInfo('Asia/Ho_Chi_Minh')).strftime('%Y-%m-%dT%H:%M')}
@@ -94,13 +93,13 @@ class ValhallaRoutingProvider(RoutingProvider):
             if trip['status'] != 0:
                 raise ValueError('Valhalla unsuccessful trip')
             candidates = [trip] + [alternate['trip'] for alternate in data.get('alternates', [])[:2]]
-            routes = [self._normalize(item) for item in candidates]
+            routes = [self._normalize(item, request.vehicle) for item in candidates]
             return sorted(routes, key=lambda route: route.duration_s)
         except (KeyError, TypeError, ValueError, IndexError, OverflowError):
             raise HTTPException(502, 'Dữ liệu tuyến Valhalla không hợp lệ') from None
 
     @staticmethod
-    def _normalize(trip: dict) -> Route:
+    def _normalize(trip: dict, vehicle: str = 'car') -> Route:
         if not isinstance(trip, dict):
             raise ValueError('Invalid trip')
         if trip.get('status', 0) != 0 or trip['units'] not in ('kilometers', 'miles'):
@@ -126,7 +125,7 @@ class ValhallaRoutingProvider(RoutingProvider):
                 instructions.append({**maneuver, 'begin_shape_index': begin + offset,
                                      'end_shape_index': end + offset, **summary(maneuver)})
         return Route(id=str(uuid4()), **summary(trip['summary']), geometry=geometry, legs=legs,
-                     instructions=instructions, provider='valhalla', vehicle='car',
+                     instructions=instructions, provider='valhalla', vehicle=vehicle,
                      retrieved_at=datetime.now(timezone.utc), traffic_aware=False, traffic_delay_s=None)
 
 
@@ -138,7 +137,10 @@ class TomTomRoutingProvider(RoutingProvider):
     async def get(self, path: str, params: dict):
         if not self.key:
             raise HTTPException(503, 'Chưa cấu hình TomTom API key')
-        for attempt in range(2):
+        # Tiles fan out on every viewport change. Do not double a failed burst
+        # or make users wait 20s per tile when the provider/network is down.
+        attempts = 1 if '/tile/' in path else 2
+        for attempt in range(attempts):
             if self.before_attempt:
                 self.before_attempt()
             started = time.perf_counter()
@@ -152,7 +154,7 @@ class TomTomRoutingProvider(RoutingProvider):
                 status = response.status_code
             except (httpx.TimeoutException, TimeoutError):
                 status = 504
-                if attempt == 0:
+                if attempt + 1 < attempts:
                     await asyncio.sleep(0.25)
                     continue
                 raise HTTPException(504, 'Nhà cung cấp hết thời gian phản hồi') from None
@@ -160,7 +162,7 @@ class TomTomRoutingProvider(RoutingProvider):
                 raise HTTPException(502, 'Không kết nối được nhà cung cấp') from None
             finally:
                 metrics.record('tomtom.' + category, (time.perf_counter()-started)*1000, status)
-            if response.status_code >= 500 and attempt == 0:
+            if response.status_code >= 500 and attempt + 1 < attempts:
                 await asyncio.sleep(0.25)
                 continue
             if response.status_code != 200:

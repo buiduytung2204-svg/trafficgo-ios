@@ -10,6 +10,43 @@ import 'package:trafficgo/app/state.dart';
 import 'package:trafficgo/features/map/map_screen.dart';
 
 void main() {
+  testWidgets(
+    'Geoapify map has authenticated tiles and no TomTom traffic layer',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preferencesProvider.overrideWithValue(prefs),
+            stateProvider.overrideWith(
+              (ref) => AppState(prefs)..token = 'test-access',
+            ),
+          ],
+          child: MaterialApp(
+            home: MapScreen(
+              source: BaseMapSource.configured(source: 'geoapify'),
+            ),
+          ),
+        ),
+      );
+      final layers = tester
+          .widgetList<TileLayer>(find.byType(TileLayer))
+          .toList();
+      expect(layers.length, 1);
+      expect(layers.single.urlTemplate, contains('/api/v1/geo/tiles/'));
+      expect(layers.single.tileProvider.headers['X-App-Token'], 'test-access');
+      expect(find.text('Powered by Geoapify'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 300));
+    },
+  );
+  test('Geoapify source uses authenticated backend without a client key', () {
+    final source = BaseMapSource.configured(source: 'geoapify');
+    expect(source.usesBackend, true);
+    expect(source.usesTomTom, false);
+    expect(source.url, isNot(contains('apiKey')));
+  });
   testWidgets('External basemap never gets app token and traffic is gated', (
     tester,
   ) async {

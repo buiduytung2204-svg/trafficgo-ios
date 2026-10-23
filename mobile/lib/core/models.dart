@@ -5,17 +5,27 @@ import 'package:latlong2/latlong.dart';
 class Place {
   final String name;
   final LatLng point;
-  const Place(this.name, this.point);
+  final String? provider;
+  final String? sourceAttribution;
+  const Place(this.name, this.point, {this.provider, this.sourceAttribution});
   factory Place.fromJson(Map<String, dynamic> j) => Place(
     j['name'] as String,
     LatLng(
       (j['coordinate']['lat'] as num).toDouble(),
       (j['coordinate']['lon'] as num).toDouble(),
     ),
+    provider: j['provider'] as String?,
+    sourceAttribution:
+        j['source_attribution'] as String? ??
+        (j['datasource'] is Map
+            ? j['datasource']['attribution'] as String?
+            : null),
   );
   Map<String, dynamic> toJson() => {
     'name': name,
     'coordinate': {'lat': point.latitude, 'lon': point.longitude},
+    if (provider != null) 'provider': provider,
+    if (sourceAttribution != null) 'source_attribution': sourceAttribution,
   };
 }
 

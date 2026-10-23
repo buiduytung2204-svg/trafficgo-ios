@@ -87,7 +87,7 @@ async def test_valhalla_failure_and_motorcycle(status):
         assert error.value.status_code==(429 if status==429 else 502)
         with pytest.raises(HTTPException) as error:
             await provider.calculate(RouteRequest(**body(),vehicle='motorcycle'))
-        assert error.value.status_code==422
+        assert error.value.status_code==(429 if status==429 else 502)
 
 
 @pytest.mark.asyncio
@@ -133,4 +133,4 @@ def test_valhalla_selection_independent_of_tomtom_budget(client, monkeypatch):
         async def calculate(self,request):return []
     client.app.state.routing=Router()
     assert client.post('/api/v1/routes/calculate',json=body()).status_code==200
-    assert client.post('/api/v1/routes/calculate',json={**body(),'vehicle':'motorcycle'}).status_code==422
+    assert client.post('/api/v1/routes/calculate',json={**body(),'vehicle':'motorcycle'}).status_code==200

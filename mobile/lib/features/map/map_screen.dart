@@ -16,6 +16,7 @@ import 'camera_session.dart';
 import 'base_map.dart';
 import 'traffic_refresh.dart';
 import '../../core/performance.dart';
+import '../location/location_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -34,8 +35,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late final BaseMapSource baseMap;
   late final TrafficRefreshPolicy trafficRefresh;
   bool get trafficAvailable =>
-      baseMap.usesTomTom ||
-      const bool.fromEnvironment('EXTERNAL_BASEMAP_TRAFFIC_APPROVED');
+      baseMap.name != 'geoapify' &&
+      (baseMap.usesTomTom ||
+          const bool.fromEnvironment('EXTERNAL_BASEMAP_TRAFFIC_APPROVED'));
+  final locationService = LocationService();
+  String vehicle = 'car';
+  bool locating = false;
   LatLng? location;
   double heading = 0;
   Place? destination;
@@ -43,6 +48,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   List<TravelRoute> routes = [];
   TravelRoute? refreshedProposal;
   int selected = 0, searchGeneration = 0, trafficEpoch = 0, offRouteFixes = 0;
+  int mapEpoch = 0;
   bool searching = false,
       loading = false,
       navigating = false,
@@ -54,6 +60,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   String? attributionToken;
   DateTime? lastTileReceived, lastRefresh, lastSuggestion;
   Timer? debounce, refreshTimer;
+  DateTime? searchBlockedUntil;
   CancelToken? searchCancel;
   StreamSubscription<Position>? gps;
   late final TileClient mapClient, trafficClient;
@@ -73,11 +80,36 @@ class _MapScreenState extends ConsumerState<MapScreen>
   TravelRoute? get current =>
       routes.isEmpty ? null : routes[selected.clamp(0, routes.length - 1)];
 
+  Widget searchCredit(Iterable<Place> places) => Wrap(
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      TextButton(
+        onPressed: () => launchUrl(Uri.parse('https://www.geoapify.com/')),
+        child: const Text('Powered by Geoapify'),
+      ),
+      TextButton(
+        onPressed: () =>
+            launchUrl(Uri.parse('https://www.openstreetmap.org/copyright')),
+        child: const Text('© OpenStreetMap contributors'),
+      ),
+      for (final credit
+          in places.map((p) => p.sourceAttribution).whereType<String>().toSet())
+        if (!credit.contains('OpenStreetMap')) Text(credit),
+    ],
+  );
+
   @override
   void initState() {
     super.initState();
     cameraSession = ref.read(cameraSessionProvider);
     baseMap = widget.source ?? BaseMapSource.configured();
+    if (baseMap.name == 'geoapify') {
+      copyrightCaption = baseMap.attribution;
+      copyright = {
+        'notices':
+            'Powered by Geoapify; © OpenStreetMap contributors; Open Database License',
+      };
+    }
     trafficRefresh = TrafficRefreshPolicy(DateTime.now());
     WidgetsBinding.instance.addTimingsCallback(PerformanceLog.instance.frames);
     mapClient = TileClient(
@@ -148,34 +180,49 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   Future<bool> permission() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      throw Exception('GPS đang tắt. Hãy bật Dịch vụ định vị trong Cài đặt.');
-    }
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception(
-        'Quyền vị trí đã bị chặn. Mở Cài đặt ứng dụng để cấp lại quyền.',
-      );
-    }
-    if (permission == LocationPermission.denied) {
-      throw Exception('Chưa có quyền vị trí. Bạn vẫn có thể xem bản đồ.');
-    }
+    await locationService.permission();
     return true;
   }
 
+  Future<void> locationFailure(Object e) async {
+    fail(e);
+    if (!mounted ||
+        e is! LocationFailure ||
+        !['blocked', 'disabled'].contains(e.code)) {
+      return;
+    }
+    final open = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Cài đặt vị trí'),
+        content: Text(e.message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Đóng'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Mở cài đặt'),
+          ),
+        ],
+      ),
+    );
+    if (open == true) {
+      if (e.code == 'blocked') {
+        await Geolocator.openAppSettings();
+      } else {
+        await Geolocator.openLocationSettings();
+      }
+    }
+  }
+
   Future<void> locate() async {
+    if (locating) return;
+    setState(() => locating = true);
     final revision = cameraSession.gestureRevision;
     try {
-      await permission();
-      final p = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 15),
-        ),
-      );
+      final p = await locationService.current();
       if (!mounted) return;
       setState(() {
         location = LatLng(p.latitude, p.longitude);
@@ -186,7 +233,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
         map.move(location!, map.camera.zoom);
       }
     } catch (e) {
-      fail(e);
+      await locationFailure(e);
+    } finally {
+      if (mounted) setState(() => locating = false);
     }
   }
 
@@ -194,15 +243,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
     debounce?.cancel();
     searchCancel?.cancel();
     final generation = ++searchGeneration;
-    if (value.trim().length < 2) {
+    if (value.trim().length < 3) {
       setState(() {
         results = [];
         searching = false;
       });
       return;
     }
+    if (searchBlockedUntil?.isAfter(DateTime.now()) ?? false) {
+      setState(() {
+        searching = false;
+        error = 'Tìm kiếm đang tạm giới hạn. Chờ rồi nhập lại.';
+      });
+      return;
+    }
     setState(() => searching = true);
-    debounce = Timer(const Duration(milliseconds: 400), () async {
+    debounce = Timer(const Duration(milliseconds: 650), () async {
       final cancel = CancelToken();
       searchCancel = cancel;
       try {
@@ -216,6 +272,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
           error = places.isEmpty ? 'Không tìm thấy địa điểm.' : null;
         });
       } catch (e) {
+        if (e is DioException && e.response?.statusCode == 429) {
+          final seconds =
+              int.tryParse(e.response?.headers.value('retry-after') ?? '') ??
+              60;
+          searchBlockedUntil = DateTime.now().add(
+            Duration(seconds: seconds.clamp(1, 86400)),
+          );
+        }
         if (!mounted ||
             generation != searchGeneration ||
             CancelToken.isCancel(
@@ -261,7 +325,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
     try {
       if (location == null) await locate();
       if (location == null || !mounted || destination != target) return;
-      final answer = await ref.read(apiProvider).routes(location!, target);
+      final answer = await ref
+          .read(apiProvider)
+          .routes(location!, target, vehicle: vehicle);
       if (!mounted || destination != target) return;
       setState(() {
         routes = answer;
@@ -308,10 +374,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     gps?.cancel();
     gps =
         Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 12,
-          ),
+          locationSettings: locationService.settings(stream: true),
         ).listen(
           (p) {
             if (!mounted || !navigating || !foreground) return;
@@ -384,7 +447,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     try {
       final answer = await ref
           .read(apiProvider)
-          .routes(location!, target, refresh: true);
+          .routes(location!, target, refresh: true, vehicle: vehicle);
       if (!mounted || !navigating || destination != target || answer.isEmpty) {
         return;
       }
@@ -438,6 +501,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
     child: IconButton(tooltip: label, onPressed: action, icon: Icon(icon)),
   );
   Future<void> loadAttribution(String token) async {
+    if (!baseMap.usesTomTom && !trafficAvailable) {
+      attributionToken = token;
+      return;
+    }
     if (token.isEmpty || attributionToken == token) return;
     attributionToken = token;
     try {
@@ -527,13 +594,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
               },
             ),
             children: [
-              if (state.token.isNotEmpty || !baseMap.usesTomTom)
+              if (state.token.isNotEmpty || !baseMap.usesBackend)
                 TileLayer(
-                  key: ValueKey('map-${state.token}'),
+                  key: ValueKey('map-$mapEpoch-${state.token}'),
                   panBuffer: 0,
                   tileUpdateTransformer: mapTileUpdates,
                   urlTemplate: baseMap.usesTomTom
                       ? '$apiBase/api/v1/tiles/map/{z}/{x}/{y}.png'
+                      : baseMap.name == 'geoapify'
+                      ? '$apiBase/api/v1/geo/tiles/{z}/{x}/{y}.png'
                       : baseMap.url,
                   tileBuilder: (context, child, tile) {
                     if (tile.loadFinishedAt != null && !tile.loadError) {
@@ -544,7 +613,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   tileProvider: NetworkTileProvider(
                     httpClient: mapClient,
                     cachingProvider: const DisabledMapCachingProvider(),
-                    headers: baseMap.usesTomTom
+                    headers: baseMap.usesBackend
                         ? {'X-App-Token': state.token}
                         : {},
                   ),
@@ -655,6 +724,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       alignment: Alignment.centerLeft,
                       child: Wrap(
                         children: [
+                          if (baseMap.name == 'geoapify')
+                            TextButton(
+                              onPressed: () => launchUrl(
+                                Uri.parse('https://www.geoapify.com/'),
+                              ),
+                              child: const Text(
+                                'Powered by Geoapify',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                            ),
                           if (baseMap.name == 'stadia_dev')
                             TextButton(
                               onPressed: () => launchUrl(
@@ -682,7 +761,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               ),
                             ),
                             child: Text(
-                              baseMap.name == 'stadia_dev'
+                              baseMap.name == 'stadia_dev' ||
+                                      baseMap.name == 'geoapify'
                                   ? '© OpenStreetMap contributors'
                                   : baseMap.attribution,
                               style: const TextStyle(fontSize: 11),
@@ -762,6 +842,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                       ),
                     ),
+                  if (results.any((p) => p.provider == 'geoapify'))
+                    searchCredit(results),
                   if (query.text.isEmpty &&
                       state.historyEnabled &&
                       destination == null &&
@@ -815,6 +897,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Icons.my_location,
                   navigating && !cameraSession.following
                       ? 'Tiếp tục theo dõi vị trí'
+                      : locating
+                      ? 'Đang lấy vị trí…'
                       : 'Định vị tôi',
                   locate,
                 ),
@@ -827,6 +911,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Icons.refresh,
                   'Tải lại bản đồ',
                   () => setState(() {
+                    mapEpoch++;
                     trafficEpoch++;
                     trafficRefresh.refreshed(DateTime.now());
                     tileError = null;
@@ -860,6 +945,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       child: Text('$copyrightCaption • Bản quyền dữ liệu'),
                     ),
                   ),
+                  if (destination?.provider == 'geoapify')
+                    searchCredit([destination!]),
                   Center(
                     child: Container(
                       width: 36,
@@ -915,7 +1002,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               ),
                             );
                             if (name != null && name.isNotEmpty) {
-                              state.save(Place(name, destination!.point));
+                              state.save(
+                                Place(
+                                  name,
+                                  destination!.point,
+                                  provider: destination!.provider,
+                                  sourceAttribution:
+                                      destination!.sourceAttribution,
+                                ),
+                              );
                             }
                           },
                           icon: const Icon(Icons.bookmark_add_outlined),
@@ -930,20 +1025,38 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   Wrap(
                     spacing: 8,
                     children: [
-                      const Chip(
-                        avatar: Icon(Icons.directions_car, size: 18),
-                        label: Text('Ô tô'),
+                      ChoiceChip(
+                        avatar: const Icon(Icons.directions_car, size: 18),
+                        label: const Text('Ô tô'),
+                        selected: vehicle == 'car',
+                        onSelected: navigating || loading
+                            ? null
+                            : (_) => setState(() {
+                                vehicle = 'car';
+                                routes = [];
+                                selected = 0;
+                                refreshedProposal = null;
+                              }),
                       ),
-                      ActionChip(
+                      ChoiceChip(
                         avatar: const Icon(Icons.two_wheeler, size: 18),
-                        label: const Text('Xe máy • chưa hỗ trợ'),
-                        onPressed: () => setState(
-                          () => error =
-                              'Chưa xác minh được tuyến xe máy hợp lệ tại Việt Nam.',
-                        ),
+                        label: const Text('Xe máy'),
+                        selected: vehicle == 'motorcycle',
+                        onSelected: navigating || loading
+                            ? null
+                            : (_) => setState(() {
+                                vehicle = 'motorcycle';
+                                routes = [];
+                                selected = 0;
+                                refreshedProposal = null;
+                              }),
                       ),
                     ],
                   ),
+                  if (vehicle == 'motorcycle')
+                    const Text(
+                      'ETA chưa tính traffic realtime. Tuân thủ biển báo giao thông thực tế.',
+                    ),
                   if (loading)
                     const Padding(
                       padding: EdgeInsets.all(16),
@@ -1037,9 +1150,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ),
                   const SizedBox(height: 12),
                   if (state.traffic && !trafficAvailable)
-                    const Text(
-                      'Traffic trên nguồn nền ngoài đang tắt: cần xác nhận điều khoản kết hợp dữ liệu trước khi bật.',
-                    ),
+                    const Text('Lớp giao thông chưa bật trên nền bản đồ này.'),
                   if (state.traffic && trafficAvailable) ...[
                     Text(
                       lastTileReceived == null

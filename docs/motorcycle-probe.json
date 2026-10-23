@@ -1,0 +1,168 @@
+{
+  "checked_at_utc": "2026-10-23T17:05:51Z",
+  "scope": "Six requests maximum; public demo; not a legality certification",
+  "results": [
+    {
+      "case": "CMC2-NHS",
+      "profile": "auto",
+      "http_status": 200,
+      "status": 0,
+      "summary": {
+        "has_time_restrictions": false,
+        "has_toll": false,
+        "has_highway": false,
+        "has_ferry": false,
+        "min_lat": 20.983403,
+        "min_lon": 105.772341,
+        "max_lat": 20.989831,
+        "max_lon": 105.782615,
+        "time": 274.633,
+        "length": 1.428,
+        "cost": 506.342
+      },
+      "error": null,
+      "road_names": [
+        "Phố Tố Hữu"
+      ],
+      "latency_ms": 939.7
+    },
+    {
+      "case": "CMC2-NHS",
+      "profile": "motor_scooter",
+      "http_status": 200,
+      "status": 0,
+      "summary": {
+        "has_time_restrictions": false,
+        "has_toll": false,
+        "has_highway": false,
+        "has_ferry": false,
+        "min_lat": 20.983403,
+        "min_lon": 105.772341,
+        "max_lat": 20.989831,
+        "max_lon": 105.782615,
+        "time": 291.061,
+        "length": 1.428,
+        "cost": 618.068
+      },
+      "error": null,
+      "road_names": [
+        "Phố Tố Hữu"
+      ],
+      "latency_ms": 241.8
+    },
+    {
+      "case": "CMC2-NHS",
+      "profile": "motorcycle",
+      "http_status": 200,
+      "status": 0,
+      "summary": {
+        "has_time_restrictions": false,
+        "has_toll": false,
+        "has_highway": false,
+        "has_ferry": false,
+        "min_lat": 20.983403,
+        "min_lon": 105.772341,
+        "max_lat": 20.989831,
+        "max_lon": 105.782615,
+        "time": 274.633,
+        "length": 1.428,
+        "cost": 446.342
+      },
+      "error": null,
+      "road_names": [
+        "Phố Tố Hữu"
+      ],
+      "latency_ms": 235.0
+    },
+    {
+      "case": "Hanoi-HoaLac",
+      "profile": "auto",
+      "http_status": 200,
+      "status": 0,
+      "summary": {
+        "has_time_restrictions": false,
+        "has_toll": false,
+        "has_highway": true,
+        "has_ferry": false,
+        "min_lat": 20.989126,
+        "min_lon": 105.52165,
+        "max_lat": 21.011842,
+        "max_lon": 105.795655,
+        "time": 2367.269,
+        "length": 31.055,
+        "cost": 3211.504
+      },
+      "error": null,
+      "road_names": [
+        "CT.03",
+        "Phố Nguyễn Chánh",
+        "Đi Sơn Tây",
+        "Đường N12",
+        "Đường N15",
+        "Đường Trần Duy Hưng"
+      ],
+      "latency_ms": 263.2
+    },
+    {
+      "case": "Hanoi-HoaLac",
+      "profile": "motor_scooter",
+      "http_status": 200,
+      "status": 0,
+      "summary": {
+        "has_time_restrictions": false,
+        "has_toll": false,
+        "has_highway": false,
+        "has_ferry": false,
+        "min_lat": 20.989358,
+        "min_lon": 105.524007,
+        "max_lat": 21.011842,
+        "max_lon": 105.795655,
+        "time": 4515.271,
+        "length": 30.662,
+        "cost": 7583.618
+      },
+      "error": null,
+      "road_names": [
+        "Phố Nguyễn Chánh",
+        "Vòng Xoay Đường N11 - Đường N10",
+        "Vườn Hoa Đại Lộ Thăng Long",
+        "Đường N11",
+        "Đường N12",
+        "Đường N15",
+        "Đường Trần Duy Hưng",
+        "Đại lộ Thăng Long"
+      ],
+      "latency_ms": 288.8
+    },
+    {
+      "case": "Hanoi-HoaLac",
+      "profile": "motorcycle",
+      "http_status": 200,
+      "status": 0,
+      "summary": {
+        "has_time_restrictions": false,
+        "has_toll": false,
+        "has_highway": false,
+        "has_ferry": false,
+        "min_lat": 20.989358,
+        "min_lon": 105.52165,
+        "max_lat": 21.011842,
+        "max_lon": 105.795655,
+        "time": 4471.493,
+        "length": 31.02,
+        "cost": 5684.933
+      },
+      "error": null,
+      "road_names": [
+        "Phố Nguyễn Chánh",
+        "Vườn Hoa Đại Lộ Thăng Long",
+        "Đi Sơn Tây",
+        "Đường N12",
+        "Đường N15",
+        "Đường Trần Duy Hưng",
+        "Đại lộ Thăng Long"
+      ],
+      "latency_ms": 267.6
+    }
+  ]
+}

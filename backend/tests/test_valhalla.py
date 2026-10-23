@@ -117,3 +117,19 @@ def test_environment_alias(monkeypatch):
     assert Settings(_env_file=None).valhalla_base_url=='https://preferred.test/route'
     monkeypatch.delenv('VALHALLA_URL')
     assert Settings(_env_file=None).valhalla_base_url=='https://legacy.test'
+
+
+@pytest.mark.asyncio
+async def test_experimental_motorcycle_uses_scooter_and_preserves_vehicle():
+    def respond(request):
+        sent = json.loads(request.content)
+        assert sent['costing'] == 'motor_scooter'
+        assert 'auto' not in sent['costing_options']
+        return httpx.Response(200, json=native_response())
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        request = RouteRequest(origin={'lat': 21.02, 'lon': 105.85},
+                               destination={'lat': 21.04, 'lon': 105.82}, vehicle='motorcycle')
+        result = await ValhallaRoutingProvider(client, 'https://example.test').calculate(request)
+    assert result[0].vehicle == 'motorcycle'
+    assert result[0].traffic_aware is False
+    assert result[0].traffic_delay_s is None

@@ -21,6 +21,8 @@ from app.database import User, SavedPlaceRow, SettingsRow
 from app.schemas import RouteRequest, SavedPlace, UserSettings
 from app.providers.routing import TomTomRoutingProvider, ValhallaRoutingProvider
 from app.providers.valhalla import FallbackRoutingProvider
+from app.providers.search import GeoapifySearchProvider, SearchBudget
+from app.providers.geo_tiles import GeoapifyTiles
 from app.tile_requests import TileRequests
 from app.metrics import metrics, request_upstream
 
@@ -50,6 +52,9 @@ async def lifespan(app):
         app.state.routing = FallbackRoutingProvider(ValhallaRoutingProvider(client, settings.valhalla_base_url),
             app.state.provider if settings.routing_fallback_to_tomtom else None)
         app.state.tile_requests = TileRequests()
+        app.state.search = GeoapifySearchProvider(client, settings.geoapify_api_key,
+            SearchBudget(settings.geoapify_budget_file, settings.geoapify_daily_budget, settings.geoapify_daily_credits))
+        app.state.geo_tiles = GeoapifyTiles(client,settings.geoapify_api_key,app.state.search.budget)
         yield
 
 
@@ -106,7 +111,7 @@ def access(request: Request, x_app_token: str = Header(default='')):
     now = time.monotonic()
     # One-worker MVP; never trust forwarded IP headers.
     host = request.client.host if request.client else 'unknown'
-    is_tile = request.url.path.startswith('/api/v1/tiles/')
+    is_tile = request.url.path.startswith(('/api/v1/tiles/', '/api/v1/geo/tiles/'))
     bucket = 'tiles' if is_tile else 'api'
     key = (host, bucket)
     limit = settings.tile_requests_per_minute if is_tile else settings.api_requests_per_minute
@@ -185,13 +190,15 @@ def health():
 def traffic_status():
     return {'configured': bool(settings.tomtom_api_key), 'provider': 'tomtom',
             'status': 'unverified' if settings.tomtom_api_key else 'unconfigured',
-            'provider_updated_at': None, 'motorcycle_supported': False,
+            'provider_updated_at': None, 'motorcycle_supported': settings.routing_provider == 'valhalla',
             'message': 'Thời điểm tải tile không phải thời điểm đo giao thông'}
 
 
 @app.get('/api/v1/diagnostics', dependencies=[Depends(access)])
-def diagnostics():
-    return {'metrics': metrics.snapshot(), 'budget': {'date':daily['date'], 'used':daily['count'],
+def diagnostics(request: Request):
+    geo = request.app.state.search
+    return {'metrics': metrics.snapshot(), 'geoapify':{**geo.budget.snapshot(),
+        'cache_hits':geo.cache_hits, 'coalesced':geo.coalesced, 'tile_cache_hits':request.app.state.geo_tiles.hits}, 'budget': {'date':daily['date'], 'used':daily['count'],
         'limit':settings.daily_provider_budget}, 'storage':'bounded process memory; latency sample window 2000/category'}
 
 
@@ -203,6 +210,12 @@ async def attribution(p=Depends(provider)):
         return {'caption': caption.get('copyrightsCaption', '© TomTom'), 'notices': notices}
     except ValueError:
         raise HTTPException(502, 'Không tải được thông tin bản quyền') from None
+
+
+@app.get('/api/v1/geo/tiles/{z}/{x}/{y}.png',dependencies=[Depends(access)])
+async def geo_tile(z:int,x:int,y:int,request:Request):
+    data,hit=await request.app.state.geo_tiles.tile(z,x,y)
+    return Response(data,media_type='image/png',headers={'X-Tile-Coalesced':str(hit).lower()})
 
 
 @app.get('/api/v1/tiles/{kind}/{z}/{x}/{y}.png')
@@ -220,9 +233,14 @@ async def tiles(kind: str, z: int, x: int, y: int, request: Request, p=Depends(p
 
 
 @app.get('/api/v1/places/search')
-async def search(q: str = Query(min_length=2, max_length=120),
+async def search(request: Request, q: str = Query(min_length=2, max_length=120),
                  lat: float = Query(21.0285, ge=20.5, le=21.6),
-                 lon: float = Query(105.8542, ge=105.2, le=106.3), p=Depends(provider)):
+                 lon: float = Query(105.8542, ge=105.2, le=106.3), _: None=Depends(access)):
+    if settings.search_provider == 'geoapify':
+        return {'places':await request.app.state.search.search(q,lat,lon),
+                'provider':'geoapify', 'attribution':'Powered by Geoapify | © OpenStreetMap contributors'}
+    reserve_attempts(0)
+    p = request.app.state.provider
     from urllib.parse import quote
     response = await p.get(f'search/2/search/{quote(q, safe="")}.json',
                            {'countrySet': 'VN', 'lat': lat, 'lon': lon, 'radius': 40000,
@@ -240,7 +258,7 @@ async def search(q: str = Query(min_length=2, max_length=120),
 @app.post('/api/v1/routes/calculate')
 @app.post('/api/v1/routes/refresh')
 async def routes(body: RouteRequest, request: Request, _: None=Depends(access)):
-    if body.vehicle != 'car':
+    if body.vehicle != 'car' and settings.routing_provider != 'valhalla':
         raise HTTPException(422, 'Xe máy chưa được xác minh tại Việt Nam')
     if settings.routing_provider == 'tomtom':
         reserve_attempts(0)

@@ -20,7 +20,7 @@ class Metrics:
             counts['requests'] += 1
             counts['errors'] += status >= 400
             counts['rate_limited'] += status == 429
-        if name.startswith(('tomtom.', 'valhalla.')):
+        if name.startswith(('tomtom.', 'valhalla.', 'geoapify.')):
             current = request_upstream.get()
             if current is not None:
                 current.append(milliseconds)

@@ -4,6 +4,7 @@ class BaseMapSource {
   final String name, url, attribution;
   const BaseMapSource(this.name, this.url, this.attribution);
   bool get usesTomTom => name == 'tomtom';
+  bool get usesBackend => usesTomTom || name == 'geoapify';
 
   static BaseMapSource configured({
     String source = const String.fromEnvironment(
@@ -15,6 +16,13 @@ class BaseMapSource {
     bool? web,
     String? hostname,
   }) {
+    if (source == 'geoapify') {
+      return const BaseMapSource(
+        'geoapify',
+        '',
+        '© Geoapify • © OpenStreetMap contributors',
+      );
+    }
     if (source == 'tomtom') {
       return const BaseMapSource('tomtom', '', '© TomTom');
     }

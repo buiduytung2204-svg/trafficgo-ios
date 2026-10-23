@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/state.dart';
 import '../../core/api.dart';
@@ -109,7 +110,7 @@ class SettingsScreen extends ConsumerWidget {
           const ListTile(
             title: Text('Phương tiện mặc định: Ô tô'),
             subtitle: Text(
-              'Xe máy chưa được xác minh trên nhà cung cấp hiện tại.',
+              'Có thể chọn ô tô hoặc xe máy trên bản đồ. ETA Valhalla chưa tính traffic realtime.',
             ),
           ),
           const ListTile(
@@ -193,6 +194,27 @@ class SavedScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+                if (state.saved.any((p) => p.provider == 'geoapify') ||
+                    state.trips.any(
+                      (t) =>
+                          t.destination.provider == 'geoapify' ||
+                          t.origin.provider == 'geoapify',
+                    ))
+                  Wrap(
+                    children: [
+                      TextButton(
+                        onPressed: () =>
+                            launchUrl(Uri.parse('https://www.geoapify.com/')),
+                        child: const Text('Powered by Geoapify'),
+                      ),
+                      TextButton(
+                        onPressed: () => launchUrl(
+                          Uri.parse('https://www.openstreetmap.org/copyright'),
+                        ),
+                        child: const Text('© OpenStreetMap contributors'),
+                      ),
+                    ],
+                  ),
               ],
             ),
     );

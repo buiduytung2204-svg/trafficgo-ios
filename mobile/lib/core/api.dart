@@ -43,6 +43,7 @@ class TrafficApi {
     LatLng origin,
     Place destination, {
     bool refresh = false,
+    String vehicle = 'car',
   }) async {
     final clock = Stopwatch()..start();
     try {
@@ -51,7 +52,7 @@ class TrafficApi {
         data: {
           'origin': {'lat': origin.latitude, 'lon': origin.longitude},
           'destination': destination.toJson()['coordinate'],
-          'vehicle': 'car',
+          'vehicle': vehicle,
         },
       );
       final routes = fastestRoutes(

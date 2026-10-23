@@ -1,19 +1,36 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'performance.dart';
 
-/// No retries here: backend owns the bounded upstream retry budget.
+/// One recovery attempt only for transient Geoapify tile HTTP 502/504.
+/// TomTom, cancellation and quota errors are never retried here.
 class TileClient extends http.BaseClient {
   final http.Client _inner;
   final void Function() onReceived;
   final void Function(String)? onFailure;
+  final _closed = Completer<void>();
   DateTime? blockedUntil;
   String blockedMessage = '';
   TileClient(this.onReceived, {this.onFailure, http.Client? client})
     : _inner = client ?? http.Client();
   @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      _send(request, retryGeoTile: true);
+
+  Future<http.StreamedResponse> _send(
+    http.BaseRequest request, {
+    required bool retryGeoTile,
+  }) async {
+    final phase = PerformanceLog.instance.phase;
+    final kind = request.url.path.contains('/traffic/') ? 'traffic' : 'map';
     if (blockedUntil != null && DateTime.now().isBefore(blockedUntil!)) {
+      PerformanceLog.instance.record(
+        '$phase.tile.$kind',
+        0,
+        failed: true,
+        outcome: 'local_backoff_429',
+      );
       return http.StreamedResponse(
         Stream.value(utf8.encode(jsonEncode({'detail': blockedMessage}))),
         429,
@@ -21,8 +38,6 @@ class TileClient extends http.BaseClient {
       );
     }
     final clock = Stopwatch()..start();
-    final phase = PerformanceLog.instance.phase;
-    final kind = request.url.path.contains('/traffic/') ? 'traffic' : 'map';
     late http.StreamedResponse response;
     try {
       final raw = await _inner
@@ -42,6 +57,7 @@ class TileClient extends http.BaseClient {
         '$phase.tile.$kind',
         clock.elapsedMicroseconds / 1000,
         failed: raw.statusCode >= 400,
+        outcome: 'http_${raw.statusCode}',
       );
       final timing = raw.headers['server-timing'] ?? '';
       for (final component in ['backend_total', 'upstream']) {
@@ -50,16 +66,42 @@ class TileClient extends http.BaseClient {
           PerformanceLog.instance.record(
             '$phase.$component.$kind',
             double.parse(match.group(1)!),
+            failed: raw.statusCode >= 400,
+            outcome: 'http_${raw.statusCode}',
           );
         }
       }
-    } catch (_) {
+    } catch (e) {
       PerformanceLog.instance.record(
         '$phase.tile.$kind',
         clock.elapsedMicroseconds / 1000,
-        failed: true,
+        failed: e is! http.RequestAbortedException,
+        outcome: e is TimeoutException
+            ? 'timeout'
+            : e is http.RequestAbortedException
+            ? 'cancelled'
+            : 'transport_error',
       );
       rethrow;
+    }
+    if (retryGeoTile &&
+        request.method == 'GET' &&
+        request.url.path.startsWith('/api/v1/geo/tiles/') &&
+        (response.statusCode == 502 || response.statusCode == 504)) {
+      // Do not reload the whole layer or change the camera for one failed tile.
+      final abort = request is http.Abortable ? request.abortTrigger : null;
+      final cancelled = await Future.any<bool>([
+        Future<bool>.delayed(const Duration(milliseconds: 500), () => false),
+        _closed.future.then((_) => true),
+        if (abort != null) abort.then((_) => true),
+      ]);
+      if (cancelled) throw http.RequestAbortedException(request.url);
+      final retry = http.AbortableRequest(
+        'GET',
+        request.url,
+        abortTrigger: abort,
+      )..headers.addAll(request.headers);
+      return _send(retry, retryGeoTile: false);
     }
     if (response.statusCode == 200) onReceived();
     if (response.statusCode >= 400) {
@@ -91,6 +133,7 @@ class TileClient extends http.BaseClient {
 
   @override
   void close() {
+    if (!_closed.isCompleted) _closed.complete();
     _inner.close();
     super.close();
   }

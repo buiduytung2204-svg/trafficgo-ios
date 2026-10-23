@@ -71,3 +71,58 @@ Sửa lỗi rate limit trên màn hình desktop: trước đây tile và tìm ki
 - Real direct + local FastAPI checks succeeded: 3714 m, 718 s, 198 points, 16 instructions, traffic_aware=false. Only two public demo calls; no load test.
 - Commands: pytest (45 passed, one existing Starlette deprecation warning), flutter analyze (no issues), flutter test (24 passed), check_ios_config.py (pass), git diff --check (pass).
 - Added docs/VALHALLA.md and opt-in scripts/check_valhalla_live.py. Public demo is development-only; production service and motorcycle verification remain outstanding.
+
+
+## 2026-10-23 ? Android APK test artifact
+
+- Branch `build/android-test`; no commit/push. User-created `.vscode/` left untouched.
+- Installed Android CLI/SDK/NDK locally outside repository; configured existing Java 21. Enabled required notification-library desugaring, debug-only HTTP allowlist for local backend, reduced Gradle memory/workers and preferred IPv4 after a DNS/download failure.
+- `flutter --verbose build apk --debug --dart-define=API_BASE_URL=http://192.168.1.115:8000`: success, 298 actionable Gradle tasks. Initial attempt interrupted for NDK install; next attempt hit Maven DNS/download delays; final build completed.
+- `apksigner verify --verbose --print-certs`: verifies APK Signature Scheme v2, Android Debug signer. `aapt dump badging`: vn.trafficgo.trafficgo 0.1.0+1, minimum SDK24, target36, arm64-v8a/armeabi-v7a/x86_64.
+- Artifact: Documents/TrafficGo-android-test.apk, 161.6 MiB; SHA256 9494eb0c8c6cac4e3dc4888147bd127d32fbb1b4841d2f99f80eb0ef52e31630. ZIP CRC, byte-for-byte copy and absence of configured TomTom key/app token checked.
+- Backend started with LAN binding; local LAN health HTTP200. Phone needs same Wi-Fi and existing APP_ACCESS_TOKEN entered in app settings. No firewall changes. No attached Android device: install/GPS/runtime not verified. See docs/ANDROID_TEST.md.
+
+
+## 2026-10-23 ? Android GPS and tile diagnostics fix
+
+- User reports no permission prompt and system-location-disabled error. Old flow checked service before requesting permission. New LocationService requests foreground permission first, distinguishes denied/blocked/disabled, opens app/system settings from an explicit action, prevents duplicate location requests, falls back to native Android LocationManager after fused-provider timeout/platform error, accepts approximate fresh fixes; no background tracking or stale fake GPS.
+- Tile metrics now classify HTTP status, transport, timeout, cancellation and local backoff. Timing errors inherit HTTP status. Cancellation no longer inflates network-error counts. Tile provider requests make one attempt (10s deadline) rather than retrying a failed burst; search/routing retry behavior unchanged. Manual refresh rebuilds both tile layers, preserving camera. Network outages are not eliminated.
+- Tests: flutter analyze clean; flutter test 33 passed; pytest 47 passed (one existing Starlette warning). APK build succeeded in 164s. No physical device attached: GPS runtime still needs user validation with Android system Location enabled.
+- Documents/TrafficGo-android-test-v2.apk: versionCode2, min SDK24, ARM64/ARMv7/x86_64; apksigner v2 verified, same debug signer as previous APK; ZIP CRC and absence of configured secrets checked. SHA256 57936bf6e547bf9ecb1d8e24a98ed1ab837c38ffbf56fd02c595de27b7b2e19c. Backend reloaded on LAN and health HTTP200.
+- Remains on build/android-test, no push; user .vscode untouched.
+
+
+## 2026-10-23 ? Geoapify search with quota guards
+
+- Local key stored only in ignored backend/.env; local SEARCH_PROVIDER=geoapify. Source default remains TomTom. Valhalla routes and TomTom tiles/traffic unchanged; no paid service, deployment or push.
+- Added Geoapify adapter, SQLite atomic daily/rate attempt guard (1000/day UTC, 40/min, 2/s), no retry/fallback, Retry-After cooldown, in-flight coalescing and RAM LRU cache (256 entries, 10min positive/30s empty). Counters only persist, no query/key/GPS history.
+- Flutter: min3 chars, 650ms debounce, stale request cancellation, 429 cooldown, provider/source credits retained for saved places and visible Geoapify/OSM credit links. Same-name features <45m deduplicated in backend.
+- Actual provider tests found NHS Trung Van and CMC campus2. FastAPI live checks: 3 queries -> 2 upstream calls + 1 RAM cache hit (repeat 3.3ms), allHTTP200. Initial manual probes accounted for: counter4/1000. No claim of account-wide billing lock.
+- Validation: pytest56 passed (one existing Starlette warning); flutter test35 passed after updating debounce expectations; analyze clean; APK build3 success90.1s; signature v2 same debug certificate; ZIP integrity/copy verified and no configured keys/tokens in artifact.
+- Artifact Documents/TrafficGo-android-test-v3.apk (161.6MiB), SHA256 082a09eaaaca421310e2b38b9cdbb7921292c03a3298fbb483f0455c9650bcd5. Backend LAN server reloaded. Install update for attribution; no attached device for runtime check. Docs: GEOAPIFY.md, PLACE_SEARCH_CHECK.md.
+
+
+## 2026-10-23 ? Geoapify basemap, web-only preview
+
+- User changed delivery to web only, no APK. TomTom deletion remains conditional on user confirming the new map works.
+- Added authenticated Geoapify osm-carto tile proxy; no client key. RAM cache max256/32MiB, honors max-age up to1hour and no-store/no-cache/private; in-flight coalescing, max3 concurrent upstream fetches and paced bursts.
+- Shared persistent credit guard2000/day UTC covers search1credit/tile0.25credit. Migrated prior search count without reset; guard uses integer quarter credits and retains search-only limits.
+- Geoapify web mode disables TomTom Traffic/attribution calls, retains required Geoapify/OSM attribution. TomTom sources remain for rollback.
+- Commands/results: pytest60 passed(one existing warning), flutter test37 passed, analyze clean, flutter build web build/web-geo succeeded70.7s (existing secure-storage Wasm dry-run warning; JS output good). No APK build.
+- Live Geo PNG HTTP200, repeat RAM-hit; two calls consumed0.25credit and no TomTom categories. Served index/bootstrap/main JS HTTP200 at localhost:5173; geo proxy route present and configured secrets absent from JS. Tile image visually inspected; full interactive browser not automated.
+- Backend LAN process11684/session83811; web static server session67784. Documentation GEOAPIFY.md updated. No push/deploy, user .vscode untouched.
+
+
+## 2026-10-23 ? Geoapify grey-hole timeout recovery
+
+- User screenshot shows missing tiles and provider timeout. Actual metrics:106 Geo map upstream attempts,3errors,0rate-limited; backend110requests/3errors. Most tiles succeeded; individual failures left holes.
+- Added exactly one delayed recovery attempt for Geoapify tile HTTP502/504 only. Never retry429/TomTom/cancelled request; retain abort trigger and stop on disposed client. No full-layer reload or camera reset. Each upstream miss still uses shared credit guard. Persistent network errors remain possible.
+- Validation: flutter analyze clean,40 Flutter tests passed (recovery success/permanent timeout/429/cancellation), web JS build success76.5s with existing Wasm dry-run warning. Backend unchanged this turn; prior60tests pass unchanged. No APK/push.
+- Web served from build/web-geo-recovery at localhost:5173. HTTP200, served JS SHA256 matches new output; configured keys/tokens absent. User must Ctrl+F5. Full interactive browser not automated.
+
+2026-10-24: Added bounded motorcycle live probe and MOTORCYCLE_VALIDATION.md. Six demo requests succeeded; two profiles avoided provider-classified highways on Hanoi-Hoa Lac sample. This does not certify Vietnamese access restrictions; motorcycle remains disabled. Raw results in docs/motorcycle-probe.json. Initial pytest from repository root could not import app; reran from backend directory.
+
+2026-10-24: User authorized experimental motorcycle coursework mode. Enabled Valhalla motor_scooter mapping end-to-end with vehicle-preserving normalization, no TomTom motorcycle fallback, visible experimental notice, and route clearing on switch. Flutter analyze clean, 40 Flutter tests passed. Added dedicated profile/normalization test. Live backend route HTTP200, motorcycle 1428m/291s plus alternate1690m/385s, traffic_aware=false. Web build succeeded to build/web-motorcycle, served at localhost:5173. No APK, push or deployment.
+
+2026-10-24: User reports field testing satisfactory and requested motorcycle as normal feature. Removed experimental label, updated settings text, retained accurate non-live ETA and road-sign reminder. No routing/profile/fallback changes. Flutter analyze clean; 40 Flutter tests passed. Building web-vehicles for localhost preview; no APK or push.
+Web-vehicles build succeeded (72.3s), served localhost:5173 and HTTP200 verified.

@@ -7,12 +7,17 @@ class PerformanceLog {
   static final instance = PerformanceLog();
   final Map<String, ListQueue<double>> samples = {};
   final Map<String, int> requests = {}, errors = {};
+  final Map<String, Map<String, int>> outcomes = {};
   String phase = 'open';
   final started = Stopwatch()..start();
   double? firstMapFrameMs, firstDecodedTileMs;
-  void record(String name, double ms, {bool failed = false}) {
+  void record(String name, double ms, {bool failed = false, String? outcome}) {
     requests[name] = (requests[name] ?? 0) + 1;
     errors[name] = (errors[name] ?? 0) + (failed ? 1 : 0);
+    if (outcome != null) {
+      final counts = outcomes.putIfAbsent(name, () => {});
+      counts[outcome] = (counts[outcome] ?? 0) + 1;
+    }
     final values = samples.putIfAbsent(name, () => ListQueue<double>());
     values.add(ms);
     if (values.length > 2000) values.removeFirst();
@@ -47,6 +52,7 @@ class PerformanceLog {
       'sample_count': sorted.length,
       'errors': errors[name],
       'error_rate': errors[name]! / requests[name]!,
+      'outcomes': outcomes[name] ?? <String, int>{},
       'p50_ms':
           sorted[((sorted.length * .5).ceil() - 1).clamp(0, sorted.length - 1)],
       'p95_ms':

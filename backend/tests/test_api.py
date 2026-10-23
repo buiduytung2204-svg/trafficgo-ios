@@ -14,9 +14,12 @@ from app.schemas import RouteRequest
 
 
 @pytest.fixture
-def client(monkeypatch):
+def client(monkeypatch, tmp_path):
     # Unit tests must never consume a developer's real provider credentials.
     monkeypatch.setattr(settings, 'tomtom_api_key', '')
+    monkeypatch.setattr(settings, 'geoapify_api_key', '')
+    monkeypatch.setattr(settings, 'search_provider', 'tomtom')
+    monkeypatch.setattr(settings, 'geoapify_budget_file', str(tmp_path / 'geo-budget.db'))
     monkeypatch.setattr(settings, 'routing_provider', 'tomtom')
     monkeypatch.setattr(settings, 'valhalla_base_url', '')
     monkeypatch.setattr(settings, 'provider_budget_file', '')

@@ -301,7 +301,7 @@ void main() {
       findsOneWidget,
     );
   });
-  testWidgets('iPhone map renders and explains motorcycle unavailable', (
+  testWidgets('iPhone map switches to motorcycle', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -320,10 +320,10 @@ void main() {
     expect(find.text('Kết nối backend để mở bản đồ thật'), findsOneWidget);
     await tester.drag(find.text('Chào Hà Nội!'), const Offset(0, -240));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Xe máy • chưa hỗ trợ'));
+    await tester.tap(find.text('Xe máy'));
     await tester.pump();
     expect(
-      find.textContaining('Chưa xác minh được tuyến xe máy'),
+      find.textContaining('ETA chưa tính traffic realtime.'),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
@@ -347,7 +347,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Hoàn Kiếm');
       await tester.pump();
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 450));
+      await tester.pump(const Duration(milliseconds: 700));
       await tester.pump();
       expect(
         find.textContaining(

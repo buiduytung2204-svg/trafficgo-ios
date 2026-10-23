@@ -11,7 +11,7 @@ class FallbackRoutingProvider(RoutingProvider):
         try:
             return await self.primary.calculate(request)
         except HTTPException as error:
-            if self.fallback is None or error.status_code not in (502, 503, 504):
+            if request.vehicle != 'car' or self.fallback is None or error.status_code not in (502, 503, 504):
                 raise
             routes = await self.fallback.calculate(request)
             for route in routes:

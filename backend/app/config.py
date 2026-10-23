@@ -6,6 +6,11 @@ from typing import Literal
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
     tomtom_api_key: str = ''
+    search_provider: Literal['tomtom', 'geoapify'] = 'tomtom'
+    geoapify_api_key: str = ''
+    geoapify_daily_budget: int = Field(default=1000, ge=1, le=3000)
+    geoapify_daily_credits: int = Field(default=2000, ge=1, le=3000)
+    geoapify_budget_file: str = '.geoapify-budget.db'
     app_access_token: str = ''
     database_url: str = 'postgresql+psycopg://trafficgo:trafficgo@localhost:5432/trafficgo'
     cors_origins: list[str] = []
