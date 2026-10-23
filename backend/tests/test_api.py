@@ -17,6 +17,8 @@ from app.schemas import RouteRequest
 def client(monkeypatch):
     # Unit tests must never consume a developer's real provider credentials.
     monkeypatch.setattr(settings, 'tomtom_api_key', '')
+    monkeypatch.setattr(settings, 'routing_provider', 'tomtom')
+    monkeypatch.setattr(settings, 'valhalla_base_url', '')
     monkeypatch.setattr(settings, 'provider_budget_file', '')
     settings.app_access_token = 'test-access'
     settings.jwt_secret = 'test-secret-that-is-at-least-32-characters'

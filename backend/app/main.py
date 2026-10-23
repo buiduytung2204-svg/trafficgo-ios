@@ -19,8 +19,8 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import User, SavedPlaceRow, SettingsRow
 from app.schemas import RouteRequest, SavedPlace, UserSettings
-from app.providers.routing import TomTomRoutingProvider
-from app.providers.valhalla import ValhallaRoutingProvider, FallbackRoutingProvider
+from app.providers.routing import TomTomRoutingProvider, ValhallaRoutingProvider
+from app.providers.valhalla import FallbackRoutingProvider
 from app.tile_requests import TileRequests
 from app.metrics import metrics, request_upstream
 

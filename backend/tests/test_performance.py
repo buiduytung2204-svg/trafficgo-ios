@@ -62,15 +62,14 @@ def test_diagnostics_auth_and_server_timing(client):
 
 
 @pytest.mark.asyncio
-async def test_valhalla_osrm_normalization_and_options():
+async def test_valhalla_native_normalization_and_options():
     def handler(request):
         import json
         sent=json.loads(request.content)
-        assert sent['costing']=='auto' and sent['shape_format']=='geojson'
+        assert sent['costing']=='auto' and sent['format']=='json'
         assert sent['costing_options']['auto']['use_tolls']==0
-        return httpx.Response(200,json={'code':'Ok','routes':[{'distance':1234.5,'duration':220.4,
-            'geometry':{'coordinates':[[105.85,21.02],[105.82,21.04]]},
-            'legs':[{'distance':1234.5,'duration':220.4,'steps':[]}]}]})
+        from test_valhalla import native_response
+        return httpx.Response(200,json=native_response())
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as transport:
         routes=await ValhallaRoutingProvider(transport,'http://localhost:8002').calculate(RouteRequest(**body(),avoid_tolls=True))
     assert routes[0].provider=='valhalla' and routes[0].traffic_aware is False
@@ -110,8 +109,10 @@ async def test_fallback_is_explicit_and_does_not_evade_rate_limit():
 
 @pytest.mark.asyncio
 async def test_valhalla_empty_malformed_and_timeout():
-    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r:httpx.Response(200,json={'routes':[]}))) as transport:
-        assert await ValhallaRoutingProvider(transport,'http://localhost').calculate(RouteRequest(**body()))==[]
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r:httpx.Response(200,json={'trip':{'status':0,'units':'kilometers','summary':{'length':0,'time':0},'legs':[]}}))) as transport:
+        with pytest.raises(HTTPException) as error:
+            await ValhallaRoutingProvider(transport,'http://localhost').calculate(RouteRequest(**body()))
+        assert error.value.status_code==502
     async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r:httpx.Response(200,json={'routes':[{}]}))) as transport:
         with pytest.raises(HTTPException) as error:
             await ValhallaRoutingProvider(transport,'http://localhost').calculate(RouteRequest(**body()))

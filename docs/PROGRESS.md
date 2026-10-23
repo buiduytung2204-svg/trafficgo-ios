@@ -61,3 +61,13 @@ Sửa lỗi rate limit trên màn hình desktop: trước đây tile và tìm ki
 3. Chuẩn bị PostgreSQL và auth issuer nếu muốn sync; apply migration và kiểm tra cascade. Guest không cần sync.
 4. Kết nối repo với Codemagic và chạy unsigned trong free allowance khi có quyền; thu logs. Cung cấp certificate/profile qua secret store để signed workflow export IPA, rồi cài iPhone.
 5. Trước public: bền vững hóa quota, device authentication, đánh giá license/privacy/App Store, map-matched navigation và UI localization tiếng Anh. Chưa có turn-by-turn/voice/background/offline maps.
+
+
+## 2026-10-23 ? Native Valhalla integration
+
+- Branch: `audit/traffic-performance`; no push/merge/deploy. Flutter and Codemagic unchanged.
+- Implemented `ValhallaRoutingProvider` in `backend/app/providers/routing.py`; compatibility import retained. Native JSON, precision-6 decoding, units, alternates, multi-leg instructions, 10s deadline, HTTP/malformed-response handling.
+- Added `VALHALLA_URL` (legacy alias supported). Local ignored environment selects the user-provided public demo; TomTom keys untouched and traffic unchanged. Fallback off; motorcycle locked.
+- Real direct + local FastAPI checks succeeded: 3714 m, 718 s, 198 points, 16 instructions, traffic_aware=false. Only two public demo calls; no load test.
+- Commands: pytest (45 passed, one existing Starlette deprecation warning), flutter analyze (no issues), flutter test (24 passed), check_ios_config.py (pass), git diff --check (pass).
+- Added docs/VALHALLA.md and opt-in scripts/check_valhalla_live.py. Public demo is development-only; production service and motorcycle verification remain outstanding.
