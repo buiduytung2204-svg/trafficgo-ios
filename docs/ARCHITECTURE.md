@@ -11,3 +11,17 @@ Endpoint cá nhân yêu cầu JWT HS256 exp/sub/iss/aud từ auth service tin c�
 Hạn chế: limiter/budget bộ nhớ chỉ một process, không bền vững; chưa có Redis vì local MVP chưa cần. Không deploy public trước khi thêm gateway/distributed quota. Không log URL provider vì chứa key và tọa độ. Uvicorn access log phải tắt để tránh query tìm kiếm. Không giữ lịch sử vị trí. User deletion /api/v1/me cascade ở PostgreSQL; UI xóa cục bộ riêng.
 
 Navigation: lọc GPS accuracy >60m, lệch tuyến khi ba fix cách polyline >max(60m,2×accuracy), dừng stream khi background/end. ETA tuyến là snapshot provider; proposal cập nhật được so với thời gian còn lại ước tính (không phải map matching). Cooldown 5 phút và tiết kiệm >180s hoặc >15%. Không voice/turn-by-turn đầy đủ, không tự xác định rẽ tiếp theo. Cần kiểm thử thực địa và đánh giá sai số trên cầu/đường song song.
+
+## Smart Departure (2026-10-24)
+The additive app.departure module shares the SQLAlchemy metadata and database. FastAPI serves authenticated CRUD/inbox; python -m app.departure.worker is the only scheduler process. A DB lease, per-occurrence event uniqueness, persisted attempt budget and revision checks protect restart and concurrent edits. Windows uses an absolute-path SQLite database because the previous PostgreSQL endpoint was unavailable; PostgreSQL models and existing data remain intact. Flutter synchronizes via a per-installation hashed credential, caches read-only overview, and shows connectivity/worker heartbeat. Local notifications require device permission and a running app receiving events; FCM/APNs remains unconfigured. See SMART_DEPARTURE.md for deployment boundaries and testing.
+
+## Integrated daily journeys (2026-10-24)
+
+Flutter JourneyStore reuses SharedPreferences with a versioned document for independent
+outbound/inbound selected-route snapshots, confirmed trip history and actual expenses.
+No destructive conversion of legacy saved trips. Local writes are serialized and roll
+back memory on failure. Schedule links use journey_id/direction in existing DB JSON;
+server ownership always derives from the installation credential, never the local ID.
+FastAPI wires Geoapify and Valhalla only, with bounded interactive routing requests and
+persistent quota/backoff. TrafficDataProvider defaults to explicitly unavailable.
+See JOURNEYS.md for storage scope, end-to-end flow and remaining push limitations.

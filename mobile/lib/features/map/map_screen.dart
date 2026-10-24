@@ -1,3 +1,6 @@
+import '../journeys/screens.dart';
+import '../journeys/store.dart';
+import '../departure/controller.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -17,11 +20,23 @@ import 'base_map.dart';
 import 'traffic_refresh.dart';
 import '../../core/performance.dart';
 import '../location/location_service.dart';
+import '../departure/screens.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   final BaseMapSource? source;
-  const MapScreen({super.key, this.source});
+  final SavedTrip? plannedTrip;
+  final String? plannedVehicle;
+  final String? journeyId, direction, occurrenceId;
+  const MapScreen({
+    super.key,
+    this.source,
+    this.plannedTrip,
+    this.plannedVehicle,
+    this.journeyId,
+    this.direction,
+    this.occurrenceId,
+  });
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
@@ -34,10 +49,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late final CameraSession cameraSession;
   late final BaseMapSource baseMap;
   late final TrafficRefreshPolicy trafficRefresh;
-  bool get trafficAvailable =>
-      baseMap.name != 'geoapify' &&
-      (baseMap.usesTomTom ||
-          const bool.fromEnvironment('EXTERNAL_BASEMAP_TRAFFIC_APPROVED'));
+  bool get trafficAvailable => false;
   final locationService = LocationService();
   String vehicle = 'car';
   bool locating = false;
@@ -55,7 +67,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
       refreshing = false,
       foreground = true;
   String? error, tileError;
-  String copyrightCaption = '© TomTom';
+  String copyrightCaption = '© Geoapify • © OpenStreetMap contributors';
+  String? activeTripId;
   Map<String, dynamic>? copyright;
   String? attributionToken;
   DateTime? lastTileReceived, lastRefresh, lastSuggestion;
@@ -101,6 +114,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
+    if (widget.plannedTrip != null) {
+      destination = widget.plannedTrip!.destination;
+      vehicle = widget.plannedVehicle ?? widget.plannedTrip!.vehicle;
+      if (widget.plannedTrip!.route != null) {
+        routes = [widget.plannedTrip!.route!];
+      }
+    }
     cameraSession = ref.read(cameraSessionProvider);
     baseMap = widget.source ?? BaseMapSource.configured();
     if (baseMap.name == 'geoapify') {
@@ -323,11 +343,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
       error = null;
     });
     try {
-      if (location == null) await locate();
-      if (location == null || !mounted || destination != target) return;
+      if (widget.plannedTrip == null && location == null) await locate();
+      final origin = widget.plannedTrip?.origin.point ?? location;
+      if (origin == null || !mounted || destination != target) return;
       final answer = await ref
           .read(apiProvider)
-          .routes(location!, target, vehicle: vehicle);
+          .routes(origin, target, vehicle: vehicle);
       if (!mounted || destination != target) return;
       setState(() {
         routes = answer;
@@ -359,6 +380,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       if (!mounted) return;
       setState(() {
         navigating = true;
+        activeTripId = newId();
         PerformanceLog.instance.phase = 'navigation';
         cameraSession.following = true;
         lastRefresh = DateTime.now();
@@ -401,7 +423,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       destination!.point,
                     ) <
                     35) {
-              stop();
+              finishJourney();
               setState(() => error = 'Bạn đang ở gần điểm đến.');
               return;
             }
@@ -412,7 +434,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               );
             }
             if (DateTime.now().difference(lastRefresh ?? DateTime(2000)) >=
-                const Duration(seconds: 90)) {
+                const Duration(minutes: 5)) {
               refreshRoute();
             }
           },
@@ -421,6 +443,64 @@ class _MapScreenState extends ConsumerState<MapScreen>
             stop();
           },
         );
+  }
+
+  Future<void> finishJourney() async {
+    final route = current;
+    final origin =
+        widget.plannedTrip?.origin ??
+        (location == null ? null : Place('Điểm xuất phát', location!));
+    final id = widget.occurrenceId ?? activeTripId;
+    stop();
+    if (route == null || origin == null || destination == null || id == null) {
+      return;
+    }
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Bạn đã hoàn thành hành trình?'),
+        content: const Text(
+          'Chỉ chuyến được xác nhận mới được tính vào thống kê.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Chỉ dừng dẫn đường'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Đã hoàn thành'),
+          ),
+        ],
+      ),
+    );
+    if (yes == true && mounted) {
+      try {
+        if (widget.occurrenceId != null) {
+          await ref.read(departureProvider).mutate(
+            'PATCH',
+            'occurrences/${widget.occurrenceId}',
+            {'status': 'completed'},
+          );
+        }
+        await ref
+            .read(journeysProvider)
+            .complete(
+              id,
+              journeyId: widget.journeyId,
+              direction: widget.direction,
+              trip: SavedTrip(
+                widget.plannedTrip?.name ?? 'Đến ${destination!.name}',
+                origin,
+                destination!,
+                route: route,
+                vehicle: vehicle,
+              ),
+            );
+      } catch (e) {
+        fail(e);
+      }
+    }
   }
 
   void stop() {
@@ -435,7 +515,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   Future<void> refreshRoute() async {
     if (refreshing ||
-        location == null ||
+        (location == null && widget.plannedTrip == null) ||
         destination == null ||
         current == null) {
       return;
@@ -444,44 +524,83 @@ class _MapScreenState extends ConsumerState<MapScreen>
     lastRefresh = DateTime.now();
     final previous = current!;
     final target = destination!;
+    final wasNavigating = navigating;
+    final routeOrigin = navigating
+        ? location
+        : widget.plannedTrip?.origin.point ?? location;
+    if (routeOrigin == null) {
+      refreshing = false;
+      return;
+    }
     try {
       final answer = await ref
           .read(apiProvider)
-          .routes(location!, target, refresh: true, vehicle: vehicle);
-      if (!mounted || !navigating || destination != target || answer.isEmpty) {
+          .routes(routeOrigin, target, refresh: true, vehicle: vehicle);
+      if (!mounted ||
+          navigating != wasNavigating ||
+          destination != target ||
+          current != previous ||
+          answer.isEmpty) {
         return;
       }
       setState(() => refreshedProposal = answer.first);
-      final elapsed = DateTime.now().difference(previous.retrievedAt).inSeconds;
-      final remaining = math.max(1, previous.seconds - elapsed);
+      final fraction = !navigating || previous.meters == 0
+          ? 1.0
+          : (remainingDistance() * 1000 / previous.meters).clamp(0.0, 1.0);
+      final remaining = math.max(1, (previous.seconds * fraction).round());
       // Refresh results are proposals; never silently replace the active path.
-      if (offRouteFixes >= 3 ||
-          shouldSuggest(
-            remaining,
-            answer.first.seconds,
-            DateTime.now().difference(lastSuggestion ?? DateTime(2000)),
-          )) {
+      if ((!navigating ||
+              DateTime.now().difference(lastSuggestion ?? DateTime(2000)) >=
+                  const Duration(minutes: 5)) &&
+          (offRouteFixes >= 3 ||
+              shouldSuggest(
+                remaining,
+                answer.first.seconds,
+                DateTime.now().difference(lastSuggestion ?? DateTime(2000)),
+              ) ||
+              !navigating)) {
         lastSuggestion = DateTime.now();
         final accept = await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
-            title: const Text('Có tuyến mới'),
+            title: const Text('So sánh tuyến đề xuất'),
             content: Text(
-              'Ước tính ${formatEta(answer.first.seconds)}. Chỉ thao tác khi đã dừng ở nơi an toàn.',
+              'Tuyến đề xuất: ${formatEta(answer.first.seconds)}. Tiết kiệm ước tính ${formatEta(math.max(0, remaining - answer.first.seconds))}. So sánh theo ETA routing, chưa có traffic realtime. Chỉ thao tác khi đã dừng ở nơi an toàn.',
             ),
             actions: [
+              TextButton(
+                onPressed: () => Navigator.push(
+                  c,
+                  MaterialPageRoute(
+                    builder: (_) => MapScreen(
+                      plannedTrip: SavedTrip(
+                        'Tuyến đề xuất',
+                        Place('Điểm xuất phát', routeOrigin),
+                        target,
+                        route: answer.first,
+                        vehicle: vehicle,
+                      ),
+                    ),
+                  ),
+                ),
+                child: const Text('Xem trên bản đồ'),
+              ),
               TextButton(
                 onPressed: () => Navigator.pop(c, false),
                 child: const Text('Giữ tuyến'),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(c, true),
-                child: const Text('Chọn tuyến mới'),
+                child: const Text('Xác nhận chuyển tuyến'),
               ),
             ],
           ),
         );
-        if (mounted && navigating && accept == true) {
+        if (mounted &&
+            navigating == wasNavigating &&
+            destination == target &&
+            current == previous &&
+            accept == true) {
           setState(() {
             routes = answer;
             selected = 0;
@@ -566,6 +685,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
               initialRotation: cameraSession.rotation,
               keepAlive: true,
               onMapReady: () {
+                if (widget.plannedTrip?.route != null &&
+                    current!.points.length > 1) {
+                  map.fitCamera(
+                    CameraFit.bounds(
+                      bounds: LatLngBounds.fromPoints(current!.points),
+                      padding: const EdgeInsets.fromLTRB(40, 180, 40, 300),
+                    ),
+                  );
+                }
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   PerformanceLog.instance.firstMapFrameMs ??=
                       PerformanceLog.instance.started.elapsedMicroseconds /
@@ -775,13 +903,60 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     children: [
                       const Icon(Icons.explore, color: Color(0xff007c78)),
                       const SizedBox(width: 8),
-                      Text(
-                        'TrafficGo',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                      Expanded(
+                        child: Text(
+                          'TrafficGo',
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),
-                      const Spacer(),
+                      PopupMenuButton<String>(
+                        tooltip: 'Hành trình và chi phí',
+                        icon: const Icon(Icons.apps),
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'route',
+                            child: Text('Tìm tuyến giữa hai địa điểm'),
+                          ),
+                          PopupMenuItem(
+                            value: 'journeys',
+                            child: Text('Hành trình đi học / đi làm'),
+                          ),
+                          PopupMenuItem(
+                            value: 'cost',
+                            child: Text('Chi phí và thống kê'),
+                          ),
+                        ],
+                        onSelected: (value) async {
+                          if (value == 'route') {
+                            final trip = await Navigator.push<SavedTrip>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const RoutePlanner(),
+                              ),
+                            );
+                            if (trip != null && context.mounted) {
+                              ref.read(stateProvider).saveTrip(trip);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MapScreen(plannedTrip: trip),
+                                ),
+                              );
+                            }
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => value == 'journeys'
+                                    ? const JourneysScreen()
+                                    : const ExpensesScreen(),
+                              ),
+                            );
+                          }
+                        },
+                      ),
                       iconButton(
                         Icons.bookmark_outline,
                         'Địa điểm đã lưu',
@@ -1021,6 +1196,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     const Text(
                       'Tìm địa điểm hoặc nhấn giữ trên bản đồ để chọn điểm đến.',
                     ),
+                  if (!navigating) const NextDepartureCard(),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -1065,20 +1241,27 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   if (current != null) ...[
                     if (!navigating)
                       TextButton.icon(
-                        onPressed: location == null
+                        onPressed:
+                            location == null && widget.plannedTrip == null
                             ? null
                             : () {
                                 state.saveTrip(
                                   SavedTrip(
                                     'Đến ${destination!.name}',
-                                    Place('Điểm xuất phát đã chọn', location!),
+                                    widget.plannedTrip?.origin ??
+                                        Place(
+                                          'Điểm xuất phát đã chọn',
+                                          location!,
+                                        ),
                                     destination!,
+                                    route: current,
+                                    vehicle: vehicle,
                                   ),
                                 );
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text(
-                                      'Đã lưu hai điểm của tuyến thường dùng.',
+                                      'Đã lưu đúng tuyến đang chọn và ETA tham khảo.',
                                     ),
                                   ),
                                 );
@@ -1109,8 +1292,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                       ),
                     Text(
-                      '${current!.provider} • ${current!.trafficAware ? 'ETA có xét traffic' : 'ETA KHÔNG có traffic realtime'} • tải ${current!.retrievedAt.toLocal().toString().substring(11, 19)}${current!.fallbackReason == null ? '' : ' • dùng provider dự phòng'}',
+                      '${current!.provider} • ${current!.trafficAware ? 'ETA có xét traffic' : 'ETA KHÔNG có traffic realtime'} • ETA tham khảo cập nhật ${current!.retrievedAt.toLocal().toString().substring(0, 16)}${current!.fallbackReason == null ? '' : ' • dùng provider dự phòng'}',
                     ),
+                    if (!navigating)
+                      OutlinedButton.icon(
+                        onPressed: refreshing ? null : refreshRoute,
+                        icon: const Icon(Icons.alt_route),
+                        label: const Text('Tìm tuyến nhanh hơn / cập nhật ETA'),
+                      ),
                     if (navigating) ...[
                       if (refreshedProposal != null)
                         Text(
@@ -1133,7 +1322,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                       ),
                       FilledButton(
-                        onPressed: stop,
+                        onPressed: finishJourney,
                         child: const Text('Kết thúc hành trình'),
                       ),
                     ] else
@@ -1146,11 +1335,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     FilledButton.icon(
                       onPressed: loading ? null : calculate,
                       icon: const Icon(Icons.route),
-                      label: const Text('Tìm đường từ vị trí của tôi'),
+                      label: Text(
+                        widget.plannedTrip == null
+                            ? 'Tìm đường từ vị trí của tôi'
+                            : 'Tìm đường theo lịch đã lưu',
+                      ),
                     ),
                   const SizedBox(height: 12),
                   if (state.traffic && !trafficAvailable)
-                    const Text('Lớp giao thông chưa bật trên nền bản đồ này.'),
+                    const Text(
+                      'Dữ liệu giao thông realtime chưa khả dụng. ETA dựa trên routing.',
+                    ),
                   if (state.traffic && trafficAvailable) ...[
                     Text(
                       lastTileReceived == null

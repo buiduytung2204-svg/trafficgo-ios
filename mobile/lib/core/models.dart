@@ -7,13 +7,25 @@ class Place {
   final LatLng point;
   final String? provider;
   final String? sourceAttribution;
-  const Place(this.name, this.point, {this.provider, this.sourceAttribution});
+  final String address, category, notes;
+  const Place(
+    this.name,
+    this.point, {
+    this.provider,
+    this.sourceAttribution,
+    this.address = '',
+    this.category = 'other',
+    this.notes = '',
+  });
   factory Place.fromJson(Map<String, dynamic> j) => Place(
     j['name'] as String,
     LatLng(
       (j['coordinate']['lat'] as num).toDouble(),
       (j['coordinate']['lon'] as num).toDouble(),
     ),
+    address: j['address'] ?? '',
+    category: j['category'] ?? 'other',
+    notes: j['notes'] ?? '',
     provider: j['provider'] as String?,
     sourceAttribution:
         j['source_attribution'] as String? ??
@@ -23,6 +35,9 @@ class Place {
   );
   Map<String, dynamic> toJson() => {
     'name': name,
+    'address': address,
+    'category': category,
+    'notes': notes,
     'coordinate': {'lat': point.latitude, 'lon': point.longitude},
     if (provider != null) 'provider': provider,
     if (sourceAttribution != null) 'source_attribution': sourceAttribution,
@@ -32,16 +47,30 @@ class Place {
 class SavedTrip {
   final String name;
   final Place origin, destination;
-  const SavedTrip(this.name, this.origin, this.destination);
+  final TravelRoute? route;
+  final String vehicle;
+  const SavedTrip(
+    this.name,
+    this.origin,
+    this.destination, {
+    this.route,
+    this.vehicle = 'car',
+  });
   Map<String, dynamic> toJson() => {
     'name': name,
     'origin': origin.toJson(),
+    'vehicle': vehicle,
+    if (route != null) 'route': route!.toJson(),
     'destination': destination.toJson(),
   };
   factory SavedTrip.fromJson(Map<String, dynamic> j) => SavedTrip(
     j['name'],
     Place.fromJson(j['origin']),
     Place.fromJson(j['destination']),
+    vehicle: j['vehicle'] ?? 'car',
+    route: j['route'] is Map
+        ? TravelRoute.fromJson(Map<String, dynamic>.from(j['route']))
+        : null,
   );
 }
 
@@ -63,10 +92,24 @@ class TravelRoute {
     required this.retrievedAt,
     this.delay,
     this.instructions = const [],
-    this.provider = 'tomtom',
-    this.trafficAware = true,
+    this.provider = 'unknown',
+    this.trafficAware = false,
     this.fallbackReason,
   });
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'distance_m': meters,
+    'duration_s': seconds,
+    'traffic_delay_s': delay,
+    'geometry': points
+        .map((p) => {'lat': p.latitude, 'lon': p.longitude})
+        .toList(),
+    'instructions': instructions,
+    'retrieved_at': retrievedAt.toIso8601String(),
+    'provider': provider,
+    'traffic_aware': trafficAware,
+    'fallback_reason': fallbackReason,
+  };
   factory TravelRoute.fromJson(Map<String, dynamic> j) => TravelRoute(
     id: j['id'],
     meters: j['distance_m'],
@@ -82,8 +125,8 @@ class TravelRoute {
         .toList(),
     instructions: j['instructions'] as List? ?? [],
     retrievedAt: DateTime.parse(j['retrieved_at']),
-    provider: j['provider'] ?? 'tomtom',
-    trafficAware: j['traffic_aware'] ?? true,
+    provider: j['provider'] ?? 'unknown',
+    trafficAware: j['traffic_aware'] ?? false,
     fallbackReason: j['fallback_reason'],
   );
 }

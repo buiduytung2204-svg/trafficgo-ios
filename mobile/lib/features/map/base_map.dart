@@ -9,7 +9,7 @@ class BaseMapSource {
   static BaseMapSource configured({
     String source = const String.fromEnvironment(
       'BASE_MAP_SOURCE',
-      defaultValue: 'tomtom',
+      defaultValue: 'geoapify',
     ),
     String osmUrl = const String.fromEnvironment('OSM_RASTER_URL'),
     String attribution = const String.fromEnvironment('OSM_RASTER_ATTRIBUTION'),
@@ -24,7 +24,7 @@ class BaseMapSource {
       );
     }
     if (source == 'tomtom') {
-      return const BaseMapSource('tomtom', '', '© TomTom');
+      throw StateError('TomTom đã ngừng hỗ trợ. Chọn Geoapify.');
     }
     if (source == 'stadia_dev') {
       final host = hostname ?? Uri.base.host;

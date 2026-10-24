@@ -85,6 +85,12 @@ class ValhallaRoutingProvider(RoutingProvider):
             metrics.record('valhalla.routing', (time.perf_counter()-started)*1000, status)
         if status != 200:
             retry = response.headers.get('Retry-After', '60')
+            if not retry.isdigit():
+                from email.utils import parsedate_to_datetime
+                try:
+                    retry = str(max(1, math.ceil((parsedate_to_datetime(retry) - datetime.now(timezone.utc)).total_seconds())))
+                except (ValueError, TypeError, OverflowError):
+                    retry = '60'
             raise HTTPException(429 if status == 429 else 502, 'Valhalla không trả được tuyến',
                 headers={'Retry-After': retry if retry.isdigit() else '60', 'X-RateLimit-Bucket': 'valhalla'} if status == 429 else None)
         try:

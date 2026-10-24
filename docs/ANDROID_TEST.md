@@ -50,3 +50,16 @@ No cloud deployment, paid service or GitHub push is part of this APK test.
 - Tile fetches do not automatically retry a failed burst; routing/search retain
   their existing bounded retry behavior. Refresh reloads both map and traffic
   layers while preserving the camera. Internet outages can still cause errors.
+
+## Smart Departure APK v4
+
+Built debug APK with --build-number=4, BASE_MAP_SOURCE=geoapify and
+API_BASE_URL=http://192.168.1.115:8000. File TrafficGo-smart-departure-v4.apk
+is in the Windows Documents folder, outside Git. Minimum Android7/API24;
+ARM64, ARMv7, x86_64. APK v2 signature verified, same debug certificate as v3.
+Install as an update; phone/computer must share Wi-Fi and the Windows backend
+and independent departure worker must stay running. Open schedule reminders,
+connect this phone's installation, create a schedule and allow notifications
+from the schedule screen. Inbox synchronization works while app receives events;
+closed-app FCM/APNs push remains unconfigured. Hardware installation/notification
+behavior has not been verified by the agent.

@@ -17,17 +17,19 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import create_engine, select, delete
 from sqlalchemy.orm import Session
 from app.config import settings
-from app.database import User, SavedPlaceRow, SettingsRow
+from app.database import User, SavedPlaceRow, SettingsRow, database_engine
 from app.schemas import RouteRequest, SavedPlace, UserSettings
-from app.providers.routing import TomTomRoutingProvider, ValhallaRoutingProvider
-from app.providers.valhalla import FallbackRoutingProvider
+from app.providers.routing import ValhallaRoutingProvider
+from app.providers.traffic import UnavailableTrafficProvider
 from app.providers.search import GeoapifySearchProvider, SearchBudget
 from app.providers.geo_tiles import GeoapifyTiles
 from app.tile_requests import TileRequests
+from app.route_requests import RouteRequests
 from app.metrics import metrics, request_upstream
+from app.departure.api import create_router as departure_router
 
 logging.getLogger('httpx').setLevel(logging.WARNING)
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+engine = database_engine(settings.database_url)
 windows = defaultdict(deque)
 daily = {'date': '', 'count': 0}
 limit_lock = Lock()
@@ -47,22 +49,24 @@ async def lifespan(app):
                 # Do not silently reset a damaged cost-control counter.
                 daily.update(date=datetime.now(timezone.utc).date().isoformat(), count=settings.daily_provider_budget)
     async with httpx.AsyncClient(timeout=httpx.Timeout(12), follow_redirects=False) as client:
-        app.state.provider = TomTomRoutingProvider(client, settings.tomtom_api_key,
-                                                   before_attempt=lambda: reserve_attempts(1))
-        app.state.routing = FallbackRoutingProvider(ValhallaRoutingProvider(client, settings.valhalla_base_url),
-            app.state.provider if settings.routing_fallback_to_tomtom else None)
+        app.state.routing = RouteRequests(ValhallaRoutingProvider(client, settings.valhalla_base_url), settings.interactive_routing_budget_file, settings.interactive_daily_routing_limit)
+        app.state.traffic = UnavailableTrafficProvider()
         app.state.tile_requests = TileRequests()
         app.state.search = GeoapifySearchProvider(client, settings.geoapify_api_key,
             SearchBudget(settings.geoapify_budget_file, settings.geoapify_daily_budget, settings.geoapify_daily_credits))
         app.state.geo_tiles = GeoapifyTiles(client,settings.geoapify_api_key,app.state.search.budget)
-        yield
+        try:
+            yield
+        finally:
+            if hasattr(app.state.routing, 'close'):
+                await app.state.routing.close()
 
 
 app = FastAPI(title='TrafficGo API', version='0.1.0', lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
-                   allow_methods=['GET', 'POST', 'PATCH', 'DELETE'],
+                   allow_methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
                    expose_headers=['Retry-After', 'X-RateLimit-Bucket', 'Server-Timing', 'X-Tile-Coalesced'],
-                   allow_headers=['Authorization', 'X-App-Token', 'Content-Type'])
+                   allow_headers=['Authorization', 'X-App-Token', 'X-Schedule-Token', 'Content-Type'])
 
 
 @app.middleware('http')
@@ -133,9 +137,8 @@ def access(request: Request, x_app_token: str = Header(default='')):
         queue.append(now)
 
 
-def provider(request: Request, _: None = Depends(access)):
-    reserve_attempts(0)
-    return request.app.state.provider
+def provider():
+    raise HTTPException(410, 'TomTom đã ngừng hỗ trợ')
 
 
 def reserve_attempts(count: int):
@@ -181,17 +184,17 @@ def db():
         yield session
 
 
+app.include_router(departure_router(access, db))
+
+
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'provider_configured': bool(settings.tomtom_api_key)}
+    return {'status': 'ok', 'provider_configured': bool(settings.valhalla_base_url), 'routing_provider': 'valhalla'}
 
 
 @app.get('/api/v1/traffic/status', dependencies=[Depends(access)])
 def traffic_status():
-    return {'configured': bool(settings.tomtom_api_key), 'provider': 'tomtom',
-            'status': 'unverified' if settings.tomtom_api_key else 'unconfigured',
-            'provider_updated_at': None, 'motorcycle_supported': settings.routing_provider == 'valhalla',
-            'message': 'Thời điểm tải tile không phải thời điểm đo giao thông'}
+    return UnavailableTrafficProvider().status()
 
 
 @app.get('/api/v1/diagnostics', dependencies=[Depends(access)])
@@ -203,13 +206,8 @@ def diagnostics(request: Request):
 
 
 @app.get('/api/v1/attribution')
-async def attribution(p=Depends(provider)):
-    try:
-        caption = (await p.get('map/1/copyrights/caption.json', {})).json()
-        notices = (await p.get('map/1/copyrights.json', {})).json()
-        return {'caption': caption.get('copyrightsCaption', '© TomTom'), 'notices': notices}
-    except ValueError:
-        raise HTTPException(502, 'Không tải được thông tin bản quyền') from None
+async def attribution():
+    return {'caption': '© Geoapify • © OpenStreetMap contributors', 'notices': 'Open Database License; Powered by Geoapify'}
 
 
 @app.get('/api/v1/geo/tiles/{z}/{x}/{y}.png',dependencies=[Depends(access)])
@@ -219,53 +217,22 @@ async def geo_tile(z:int,x:int,y:int,request:Request):
 
 
 @app.get('/api/v1/tiles/{kind}/{z}/{x}/{y}.png')
-async def tiles(kind: str, z: int, x: int, y: int, request: Request, p=Depends(provider)):
-    if kind not in ('map', 'traffic') or not 0 <= z <= 18 or not 0 <= x < 2**z or not 0 <= y < 2**z:
-        raise HTTPException(422, 'Tile không hợp lệ')
-    path = (f'map/1/tile/basic/main/{z}/{x}/{y}.png' if kind == 'map' else
-            f'traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png')
-    result, joined = await request.app.state.tile_requests.get((kind,z,x,y), lambda: p.get(path, {'tileSize':256}))
-    if 'image/png' not in result.headers.get('content-type', ''):
-        raise HTTPException(502, 'Tile không hợp lệ')
-    return Response(result.content, media_type='image/png', headers={
-        'Cache-Control': 'no-store', 'X-Tile-Coalesced':str(joined).lower(),
-        'X-Retrieved-At': datetime.now(timezone.utc).isoformat()})
+async def tiles(kind: str, z: int, x: int, y: int, _: None=Depends(access)):
+    raise HTTPException(410, 'TomTom đã ngừng hỗ trợ. Dùng /api/v1/geo/tiles cho bản đồ nền.')
 
 
 @app.get('/api/v1/places/search')
 async def search(request: Request, q: str = Query(min_length=2, max_length=120),
                  lat: float = Query(21.0285, ge=20.5, le=21.6),
                  lon: float = Query(105.8542, ge=105.2, le=106.3), _: None=Depends(access)):
-    if settings.search_provider == 'geoapify':
-        return {'places':await request.app.state.search.search(q,lat,lon),
-                'provider':'geoapify', 'attribution':'Powered by Geoapify | © OpenStreetMap contributors'}
-    reserve_attempts(0)
-    p = request.app.state.provider
-    from urllib.parse import quote
-    response = await p.get(f'search/2/search/{quote(q, safe="")}.json',
-                           {'countrySet': 'VN', 'lat': lat, 'lon': lon, 'radius': 40000,
-                            'limit': 8, 'language': 'vi-VN', 'typeahead': 'true'})
-    try:
-        return {'places': [{'id': item['id'], 'name': item.get('poi', {}).get('name', item['address'].get('freeformAddress', '')),
-                'address': item['address'].get('freeformAddress', ''),
-                'coordinate': {'lat': item['position']['lat'], 'lon': item['position']['lon']}}
-                for item in response.json().get('results', [])
-                if 20.5 <= item['position']['lat'] <= 21.6 and 105.2 <= item['position']['lon'] <= 106.3]}
-    except (KeyError, ValueError, TypeError):
-        raise HTTPException(502, 'Kết quả tìm kiếm không hợp lệ') from None
+    return {'places':await request.app.state.search.search(q,lat,lon),
+            'provider':'geoapify', 'attribution':'Powered by Geoapify | ? OpenStreetMap contributors'}
 
 
 @app.post('/api/v1/routes/calculate')
 @app.post('/api/v1/routes/refresh')
 async def routes(body: RouteRequest, request: Request, _: None=Depends(access)):
-    if body.vehicle != 'car' and settings.routing_provider != 'valhalla':
-        raise HTTPException(422, 'Xe máy chưa được xác minh tại Việt Nam')
-    if settings.routing_provider == 'tomtom':
-        reserve_attempts(0)
-        selected = request.app.state.provider
-    else:
-        selected = request.app.state.routing
-    return {'routes': await selected.calculate(body)}
+    return {'routes': await request.app.state.routing.calculate(body)}
 
 
 @app.get('/api/v1/saved-places')

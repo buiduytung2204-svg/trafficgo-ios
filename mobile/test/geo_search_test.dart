@@ -68,8 +68,8 @@ void main() {
     await tester.pump();
     expect(api.calls, 1);
     expect(find.text('NHS Trung Văn'), findsOneWidget);
-    expect(find.text('Powered by Geoapify'), findsOneWidget);
-    expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
+    expect(find.text('Powered by Geoapify'), findsWidgets);
+    expect(find.text('© OpenStreetMap contributors'), findsWidgets);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 300));
   });

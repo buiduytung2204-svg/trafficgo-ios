@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import '../features/map/map_screen.dart';
 import '../features/settings/screens.dart';
+import '../features/departure/screens.dart';
+import '../features/departure/models.dart';
+import '../core/models.dart';
 import 'state.dart';
 
 final router = GoRouter(
@@ -15,6 +18,29 @@ final router = GoRouter(
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(path: '/saved', builder: (context, state) => const SavedScreen()),
+    GoRoute(
+      path: '/schedules',
+      builder: (context, state) => const SchedulesScreen(),
+    ),
+    GoRoute(
+      path: '/departure-notifications',
+      builder: (context, state) => const DepartureNotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/schedule-edit',
+      builder: (context, state) =>
+          ScheduleEditor(schedule: state.extra as CommuteSchedule?),
+    ),
+    GoRoute(
+      path: '/commute-route',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>?;
+        return MapScreen(
+          plannedTrip: data?['trip'] as SavedTrip?,
+          plannedVehicle: data?['vehicle'] as String?,
+        );
+      },
+    ),
   ],
 );
 
@@ -138,7 +164,7 @@ class _HomeGateState extends ConsumerState<HomeGate> {
                       ),
                       const SizedBox(height: 20),
                       const Text(
-                        'Khám phá bản đồ, so sánh tuyến ô tô và theo dõi giao thông từ TomTom.',
+                        'Tìm địa điểm, so sánh tuyến đường và quản lý hành trình hằng ngày.',
                       ),
                       const SizedBox(height: 20),
                       const Text(

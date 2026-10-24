@@ -1,3 +1,7 @@
+import '../map/map_screen.dart';
+import '../journeys/screens.dart';
+import '../journeys/place_picker.dart';
+import '../../core/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +20,20 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Cài đặt')),
       body: ListView(
         children: [
+          ListTile(
+            leading: const Icon(Icons.route),
+            title: const Text('Hành trình và chi phí'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const JourneysScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.alarm),
+            title: const Text('Lịch nhắc giờ xuất phát'),
+            subtitle: const Text('Lịch đi học, đi làm và lịch sử thông báo'),
+            onTap: () => context.push('/schedules'),
+          ),
           ListTile(
             leading: const Icon(Icons.speed),
             title: const Text('Chẩn đoán hiệu năng'),
@@ -161,6 +179,15 @@ class SavedScreen extends ConsumerWidget {
     final state = ref.watch(stateProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Địa điểm đã lưu')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final p = await pickPlace(context);
+          if (p != null && context.mounted) {
+            await editSavedPlace(context, ref, p);
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
       body: state.saved.isEmpty && state.trips.isEmpty
           ? const Center(child: Text('Chọn một điểm trên bản đồ rồi nhấn Lưu.'))
           : ListView(
@@ -170,9 +197,17 @@ class SavedScreen extends ConsumerWidget {
                     leading: const Icon(Icons.route),
                     title: Text(trip.name),
                     subtitle: Text(
-                      '${trip.origin.name} → ${trip.destination.name}\nChỉ lưu hai điểm; tính tuyến mới từ GPS khi chọn.',
+                      '${trip.origin.name} → ${trip.destination.name}\n${trip.route == null ? 'Tuyến cũ chỉ có hai điểm; cần tính tuyến.' : 'Mở đúng tuyến đã lưu; ETA tham khảo.'}',
                     ),
-                    onTap: () => context.pop(trip.destination),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MapScreen(
+                          plannedTrip: trip,
+                          plannedVehicle: trip.vehicle,
+                        ),
+                      ),
+                    ),
                     trailing: IconButton(
                       tooltip: 'Xóa tuyến thường dùng',
                       icon: const Icon(Icons.delete_outline),
@@ -183,10 +218,9 @@ class SavedScreen extends ConsumerWidget {
                   (p) => ListTile(
                     leading: const Icon(Icons.bookmark),
                     title: Text(p.name),
-                    subtitle: Text(
-                      '${p.point.latitude.toStringAsFixed(4)}, ${p.point.longitude.toStringAsFixed(4)}',
-                    ),
+                    subtitle: Text('${p.address} ? ${p.category} ${p.notes}'),
                     onTap: () => context.pop(p),
+                    onLongPress: () => editSavedPlace(context, ref, p),
                     trailing: IconButton(
                       tooltip: 'Xóa địa điểm',
                       icon: const Icon(Icons.delete_outline),
@@ -219,4 +253,87 @@ class SavedScreen extends ConsumerWidget {
             ),
     );
   }
+}
+
+Future<void> editSavedPlace(
+  BuildContext context,
+  WidgetRef ref,
+  Place p,
+) async {
+  final name = TextEditingController(text: p.name),
+      address = TextEditingController(text: p.address),
+      notes = TextEditingController(text: p.notes);
+  var category = p.category;
+  final yes = await showDialog<bool>(
+    context: context,
+    builder: (c) => StatefulBuilder(
+      builder: (c, set) => AlertDialog(
+        title: const Text('Lưu / sửa địa điểm'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                maxLength: 100,
+                decoration: const InputDecoration(labelText: 'Tên địa điểm'),
+              ),
+              TextField(
+                controller: address,
+                decoration: const InputDecoration(labelText: 'Địa chỉ'),
+              ),
+              DropdownButton<String>(
+                value: category,
+                items: const [
+                  DropdownMenuItem(value: 'home', child: Text('Nhà')),
+                  DropdownMenuItem(value: 'school', child: Text('Trường học')),
+                  DropdownMenuItem(value: 'work', child: Text('Công ty')),
+                  DropdownMenuItem(value: 'favorite', child: Text('Yêu thích')),
+                  DropdownMenuItem(value: 'other', child: Text('Khác')),
+                ],
+                onChanged: (v) => set(() => category = v!),
+              ),
+              TextField(
+                controller: notes,
+                maxLength: 500,
+                decoration: const InputDecoration(labelText: 'Ghi chú'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (name.text.trim().isNotEmpty) Navigator.pop(c, true);
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (yes == true) {
+    final state = ref.read(stateProvider);
+    state.remove(p);
+    state.save(
+      Place(
+        name.text.trim(),
+        p.point,
+        provider: p.provider,
+        sourceAttribution: p.sourceAttribution,
+        address: address.text.trim(),
+        category: category,
+        notes: notes.text.trim(),
+      ),
+    );
+  }
+  Future.delayed(const Duration(seconds: 1), () {
+    name.dispose();
+    address.dispose();
+    notes.dispose();
+  });
 }

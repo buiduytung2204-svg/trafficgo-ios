@@ -167,7 +167,10 @@ void main() {
   test(
     'OSM source does not use public community tiles or mobile dev bypass',
     () {
-      expect(BaseMapSource.configured(source: 'tomtom').usesTomTom, true);
+      expect(
+        () => BaseMapSource.configured(source: 'tomtom'),
+        throwsStateError,
+      );
       expect(
         BaseMapSource.configured(
           source: 'stadia_dev',

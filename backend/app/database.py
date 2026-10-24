@@ -2,6 +2,19 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from sqlalchemy import ForeignKey, String, JSON, DateTime, Index
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import create_engine, event
+
+
+def database_engine(url):
+    engine = create_engine(url, pool_pre_ping=True)
+    if engine.dialect.name == 'sqlite':
+        @event.listens_for(engine, 'connect')
+        def sqlite_constraints(connection, _):
+            cursor = connection.cursor()
+            cursor.execute('PRAGMA foreign_keys=ON')
+            cursor.execute('PRAGMA busy_timeout=5000')
+            cursor.close()
+    return engine
 
 
 class Base(DeclarativeBase):

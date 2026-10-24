@@ -18,11 +18,12 @@ def client(monkeypatch, tmp_path):
     # Unit tests must never consume a developer's real provider credentials.
     monkeypatch.setattr(settings, 'tomtom_api_key', '')
     monkeypatch.setattr(settings, 'geoapify_api_key', '')
-    monkeypatch.setattr(settings, 'search_provider', 'tomtom')
+    monkeypatch.setattr(settings, 'search_provider', 'geoapify')
     monkeypatch.setattr(settings, 'geoapify_budget_file', str(tmp_path / 'geo-budget.db'))
-    monkeypatch.setattr(settings, 'routing_provider', 'tomtom')
+    monkeypatch.setattr(settings, 'routing_provider', 'valhalla')
     monkeypatch.setattr(settings, 'valhalla_base_url', '')
     monkeypatch.setattr(settings, 'provider_budget_file', '')
+    monkeypatch.setattr(settings, 'interactive_routing_budget_file', str(tmp_path / 'routing.db'))
     settings.app_access_token = 'test-access'
     settings.jwt_secret = 'test-secret-that-is-at-least-32-characters'
     windows.clear()
@@ -53,8 +54,8 @@ def test_health_auth_validation(client):
     assert client.get('/api/v1/traffic/status', headers={'X-App-Token': 'bad'}).status_code == 401
     assert client.post('/api/v1/routes/calculate', json={**body(), 'vehicle': 'bike'}).status_code == 422
     assert client.post('/api/v1/routes/calculate', json={**body(), 'origin': {'lat': 0, 'lon': 0}}).status_code == 422
-    assert client.post('/api/v1/routes/calculate', json={**body(), 'vehicle': 'motorcycle'}).status_code == 422
-    assert client.get('/api/v1/tiles/map/3/100/1.png').status_code == 422
+    assert client.post('/api/v1/routes/calculate', json={**body(), 'vehicle': 'motorcycle'}).status_code == 503
+    assert client.get('/api/v1/tiles/map/3/100/1.png').status_code == 410
 
 
 def test_personal_access(client):

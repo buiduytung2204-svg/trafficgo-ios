@@ -1,3 +1,5 @@
+> Cập nhật 24/10/2026: bản hiện tại dùng Geoapify cho map/search và Valhalla cho routing. TomTom không còn được khởi tạo trong API/worker; endpoint tile cũ trả 410. Các đánh giá TomTom bên dưới là lịch sử nghiên cứu. Xem [JOURNEYS.md](JOURNEYS.md) và [SMART_DEPARTURE.md](SMART_DEPARTURE.md) cho cấu hình/quota/giới hạn hiện tại. Chưa có nguồn traffic realtime được cấu hình.
+
 # API validation — 23/10/2026
 
 ## Quyết định

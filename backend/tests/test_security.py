@@ -14,7 +14,7 @@ def test_request_budget_and_body_limit(client):
     from datetime import datetime, timezone
     daily.update(date=datetime.now(timezone.utc).date().isoformat(), count=1)
     try:
-        assert client.post('/api/v1/routes/calculate',json=body()).status_code==429
+        assert client.post('/api/v1/routes/calculate',json=body()).status_code==503
     finally:
         settings.daily_provider_budget=original
         daily.update(date='',count=0)
@@ -23,7 +23,7 @@ def test_request_budget_and_body_limit(client):
 
 
 def test_unconfigured_provider_never_returns_fake(client):
-    assert client.get('/api/v1/traffic/status').json()['status']=='unconfigured'
+    assert client.get('/api/v1/traffic/status').json()['status']=='unavailable'
     assert client.post('/api/v1/routes/calculate',json=body()).status_code==503
     assert client.get('/api/v1/places/search?q=Hanoi').status_code==503
 
@@ -52,9 +52,15 @@ def test_tile_burst_does_not_block_search_or_routes(client):
             return httpx.Response(200, content=b'png', headers={'content-type': 'image/png'})
         async def calculate(self, request):
             return []
-    client.app.state.provider = Provider()
+    class Search:
+        async def search(self, *args): return []
+    class Tiles:
+        async def tile(self, *args): return b'png', False
+    client.app.state.routing = Provider()
+    client.app.state.search = Search()
+    client.app.state.geo_tiles = Tiles()
     for _ in range(181):
-        assert client.get('/api/v1/tiles/map/13/6504/3606.png').status_code == 200
+        assert client.get('/api/v1/geo/tiles/13/6504/3606.png').status_code == 200
     assert client.get('/api/v1/places/search?q=Hanoi').status_code == 200
     assert client.post('/api/v1/routes/calculate', json=body()).status_code == 200
 
@@ -63,8 +69,8 @@ def test_tile_limit_still_applies_independently(client, monkeypatch):
     monkeypatch.setattr(settings, 'tile_requests_per_minute', 2)
     # Missing provider key yields 503 but each request is still rate limited.
     for _ in range(2):
-        assert client.get('/api/v1/tiles/map/13/6504/3606.png').status_code == 503
-    response = client.get('/api/v1/tiles/map/13/6504/3606.png')
+        assert client.get('/api/v1/geo/tiles/13/6504/3606.png').status_code == 503
+    response = client.get('/api/v1/geo/tiles/13/6504/3606.png')
     assert response.status_code == 429
     assert response.headers['X-RateLimit-Bucket'] == 'tiles'
     assert 1 <= int(response.headers['Retry-After']) <= 60
@@ -97,3 +103,12 @@ def test_daily_budget_survives_restart(monkeypatch, tmp_path):
     daily['count']=0
     with TestClient(app):
         assert daily['count']==1
+
+
+def test_tomtom_endpoints_retired_without_upstream(client):
+    assert client.get('/api/v1/tiles/map/13/6504/3606.png').status_code == 410
+    assert client.get('/api/v1/tiles/traffic/13/6504/3606.png').status_code == 410
+    assert not hasattr(client.app.state, 'provider')
+    status = client.get('/api/v1/traffic/status').json()
+    assert status['status'] == 'unavailable' and status['provider'] is None
+    assert 'TomTom' not in client.get('/api/v1/attribution').text
