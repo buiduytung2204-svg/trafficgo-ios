@@ -13,13 +13,14 @@ import jwt
 from fastapi import FastAPI, Depends, HTTPException, Header, Query, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import create_engine, select, delete
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import User, SavedPlaceRow, SettingsRow, database_engine
 from app.schemas import RouteRequest, SavedPlace, UserSettings
-from app.providers.routing import ValhallaRoutingProvider
+from app.providers.factory import create_routing_provider
 from app.providers.traffic import UnavailableTrafficProvider
 from app.providers.search import GeoapifySearchProvider, SearchBudget
 from app.providers.geo_tiles import GeoapifyTiles
@@ -27,6 +28,7 @@ from app.tile_requests import TileRequests
 from app.route_requests import RouteRequests
 from app.metrics import metrics, request_upstream
 from app.departure.api import create_router as departure_router
+from app.accounts.api import create_router as account_router
 
 logging.getLogger('httpx').setLevel(logging.WARNING)
 engine = database_engine(settings.database_url)
@@ -49,7 +51,7 @@ async def lifespan(app):
                 # Do not silently reset a damaged cost-control counter.
                 daily.update(date=datetime.now(timezone.utc).date().isoformat(), count=settings.daily_provider_budget)
     async with httpx.AsyncClient(timeout=httpx.Timeout(12), follow_redirects=False) as client:
-        app.state.routing = RouteRequests(ValhallaRoutingProvider(client, settings.valhalla_base_url), settings.interactive_routing_budget_file, settings.interactive_daily_routing_limit)
+        app.state.routing = RouteRequests(create_routing_provider(client, settings), settings.interactive_routing_budget_file, settings.interactive_daily_routing_limit)
         app.state.traffic = UnavailableTrafficProvider()
         app.state.tile_requests = TileRequests()
         app.state.search = GeoapifySearchProvider(client, settings.geoapify_api_key,
@@ -99,6 +101,14 @@ async def limit_body(request: Request, call_next):
     logger.info('request method=%s route=%s status=%s', request.method,
                 getattr(route, 'path', 'unmatched'), response.status_code)
     return response
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request, exc):
+    # Never echo submitted passwords/tokens (including nested request bodies).
+    return JSONResponse(status_code=422, content={'detail': [
+        {'loc': list(e['loc']), 'type': e['type'], 'msg': e['msg']}
+        for e in exc.errors()]})
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -185,11 +195,13 @@ def db():
 
 
 app.include_router(departure_router(access, db))
+app.include_router(account_router(access, db))
 
 
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'provider_configured': bool(settings.valhalla_base_url), 'routing_provider': 'valhalla'}
+    configured = bool(settings.valhalla_base_url) if settings.routing_provider == 'valhalla' else bool(settings.tomtom_api_key and settings.tomtom_routing_license_confirmed)
+    return {'status': 'ok', 'provider_configured': configured, 'routing_provider': settings.routing_provider}
 
 
 @app.get('/api/v1/traffic/status', dependencies=[Depends(access)])

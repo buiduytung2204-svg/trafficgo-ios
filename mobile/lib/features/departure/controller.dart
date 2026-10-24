@@ -27,10 +27,15 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
   DateTime? syncedAt;
   Timer? poll;
   late final Future<void> ready;
-  String get storageKey => 'departure-session:$apiBase';
-  String get cacheKey => 'departure-overview:$apiBase';
+  late final String prefix;
+  String get storageKey => '${prefix}departure-session:$apiBase';
+  String get cacheKey => '${prefix}departure-overview:$apiBase';
   DepartureController(this.dio, prefs)
-    : localNotifications = DepartureLocalNotifications(prefs) {
+    : localNotifications = DepartureLocalNotifications(
+        prefs,
+        prefix: accountPrefix(prefs),
+      ) {
+    prefix = accountPrefix(prefs);
     try {
       final cached = prefs.getString(cacheKey);
       if (cached != null) accept(Map<String, dynamic>.from(jsonDecode(cached)));
@@ -109,6 +114,7 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
     error = null;
     changed();
     try {
+      if (prefix.isNotEmpty) throw StateError('Account session required');
       final result = await dio.post('/api/v1/departure/session');
       credential = result.data['token'];
       await TrafficApi.storage.write(key: storageKey, value: credential);

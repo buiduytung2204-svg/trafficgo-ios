@@ -37,7 +37,7 @@ async def test_malformed_upstream_and_retry_bound():
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
         with pytest.raises(HTTPException):
             await TomTomRoutingProvider(c,'key').calculate(RouteRequest(**body()))
-    assert len(calls)==2
+    assert len(calls)==1  # Routing never doubles a failed request against the quota.
     async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r:httpx.Response(200,json={'routes':[{}]}))) as c:
         with pytest.raises(HTTPException) as e:
             await TomTomRoutingProvider(c,'key').calculate(RouteRequest(**body()))

@@ -136,16 +136,17 @@ class ValhallaRoutingProvider(RoutingProvider):
 
 
 class TomTomRoutingProvider(RoutingProvider):
-    def __init__(self, client: httpx.AsyncClient, key: str, before_attempt=None):
+    def __init__(self, client: httpx.AsyncClient, key: str, before_attempt=None, motorcycle_verified=False):
         self.client, self.key = client, key
         self.before_attempt = before_attempt
+        self.motorcycle_verified = motorcycle_verified
 
     async def get(self, path: str, params: dict):
         if not self.key:
             raise HTTPException(503, 'Chưa cấu hình TomTom API key')
         # Tiles fan out on every viewport change. Do not double a failed burst
         # or make users wait 20s per tile when the provider/network is down.
-        attempts = 1 if '/tile/' in path else 2
+        attempts = 1 if '/tile/' in path or path.startswith('routing/') else 2
         for attempt in range(attempts):
             if self.before_attempt:
                 self.before_attempt()
@@ -182,10 +183,11 @@ class TomTomRoutingProvider(RoutingProvider):
         raise HTTPException(502, 'Nhà cung cấp không khả dụng')
 
     async def calculate(self, request):
-        if request.vehicle != 'car':
+        if request.vehicle != 'car' and not self.motorcycle_verified:
             raise HTTPException(422, 'Xe máy chưa được xác minh cho Việt Nam trên stack hiện tại')
         o, d = request.origin, request.destination
-        params = {'traffic': 'true', 'travelMode': 'car', 'maxAlternatives': 2,
+        params = {'traffic': 'true', 'travelMode': request.vehicle, 'maxAlternatives': 2,
+                  'routeType': 'fastest', 'computeTravelTimeFor': 'all',
                   'instructionsType': 'text', 'language': 'vi-VN',
                   'departAt': request.departure.isoformat() if request.departure else 'now'}
         avoid = []
@@ -205,7 +207,8 @@ class TomTomRoutingProvider(RoutingProvider):
                     geometry=[{'lat': p['latitude'], 'lon': p['longitude']} for leg in raw['legs'] for p in leg['points']],
                     legs=[{'summary': leg.get('summary', {})} for leg in raw['legs']],
                     instructions=raw.get('guidance', {}).get('instructions', []),
-                    retrieved_at=datetime.now(timezone.utc), vehicle=request.vehicle))
+                    retrieved_at=datetime.now(timezone.utc), vehicle=request.vehicle,
+                    provider='tomtom', traffic_aware=True))
             return sorted(routes, key=lambda route: route.duration_s)
         except (KeyError, ValueError, TypeError):
             raise HTTPException(502, 'Dữ liệu tuyến không hợp lệ') from None

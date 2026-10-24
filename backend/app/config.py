@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     routing_provider: Literal['tomtom', 'valhalla'] = 'valhalla'
     valhalla_base_url: str = Field(default='', validation_alias=AliasChoices('VALHALLA_URL', 'VALHALLA_BASE_URL', 'valhalla_base_url'))
     routing_fallback_to_tomtom: bool = False
+    # Enable only after checking the account's map/navigation licence.
+    tomtom_routing_license_confirmed: bool = False
+    tomtom_motorcycle_vietnam_verified: bool = False
+    tomtom_motorcycle_experimental_enabled: bool = False
     interactive_routing_budget_file: str = '.routing-budget.db'
     interactive_daily_routing_limit: int = Field(default=96, ge=1, le=200)
     departure_live_routing_enabled: bool = False

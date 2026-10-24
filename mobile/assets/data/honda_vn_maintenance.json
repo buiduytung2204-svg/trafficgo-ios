@@ -1,0 +1,1352 @@
+{
+  "version": 1,
+  "market": "Vietnam",
+  "brand": "Honda",
+  "checked_at": "2026-10-24",
+  "official_index": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung",
+  "terms_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung/dieu-khoan-huong-dan-su-dung?type=2",
+  "policy": "Chỉ metadata/liên kết và dữ kiện mốc thay dầu đã đối chiếu bảng; không phân phối PDF, không suy rộng đời/phiên bản. Các hạng mục khác chưa xác minh.",
+  "models": [
+    {
+      "id": "wave_alpha",
+      "name": "Wave Alpha",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 114,
+          "label": "Wave Alpha 2024",
+          "year": 2024,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/P8qeKg7vdU5RIqpRvC4v.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=114",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "38fa8f6132053d71f437ca3b9c4bad359c4b42301bfcba02d729098c31f46509",
+          "maintenance_rules": [
+            {
+              "id": "honda-114-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 44,
+              "source_notes_pdf_page": 45,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/P8qeKg7vdU5RIqpRvC4v.pdf",
+              "source_label": "Wave Alpha 2024",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 87,
+          "label": "Wave Alpha 2023",
+          "year": 2023,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/Q8CyLQGToNX5oKGbYW5x.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=87",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "6f2ecce6320617c31412bd125940248eb4ad24af680a9d48c2ff9e114f549d8e",
+          "maintenance_rules": [
+            {
+              "id": "honda-87-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 43,
+              "source_notes_pdf_page": 44,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/Q8CyLQGToNX5oKGbYW5x.pdf",
+              "source_label": "Wave Alpha 2023",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "wave_rsx",
+      "name": "Wave RSX FI",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 152,
+          "label": "Wave RSX FI 2026",
+          "year": 2026,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/EzA6x0gXYsjvv9AhkVm2.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=152",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "ff33c939c145c6a4bdb6a8812f3b39d6a2a9ddf3eea781844a43f88fa840c30c",
+          "maintenance_rules": [
+            {
+              "id": "honda-152-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 47,
+              "source_notes_pdf_page": 48,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/EzA6x0gXYsjvv9AhkVm2.pdf",
+              "source_label": "Wave RSX FI 2026",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 123,
+          "label": "Wave RSX FI 2024",
+          "year": 2024,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/aRAQz3YRViMKvY1lWCUd.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=123",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "189617a1582a64336c0cdf500f03f6060d9f90a89b72da8fb6c895de495f83f6",
+          "maintenance_rules": [
+            {
+              "id": "honda-123-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 47,
+              "source_notes_pdf_page": 48,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/aRAQz3YRViMKvY1lWCUd.pdf",
+              "source_label": "Wave RSX FI 2024",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 95,
+          "label": "Wave RSX FI 2023",
+          "year": 2023,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/hXJlUsmTa6v62szG78g5.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=95",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "6784635eceb4ed8534bca08e7ee55e0bc3bbc31026d3555d9b8dce58f03041a8",
+          "maintenance_rules": [
+            {
+              "id": "honda-95-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 38,
+              "source_notes_pdf_page": 39,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/hXJlUsmTa6v62szG78g5.pdf",
+              "source_label": "Wave RSX FI 2023",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "wave_classic",
+      "name": "Wave Alpha cổ điển",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 129,
+          "label": "Wave Alpha phiên bản cổ điển 2025",
+          "year": 2025,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/PIcp8XLSxQmsi5X5Twsy.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=129",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "9555502733346a9793d8234993e4a705f2d0eeb18e1ebab71975d0b5640354cb",
+          "maintenance_rules": [
+            {
+              "id": "honda-129-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 43,
+              "source_notes_pdf_page": 44,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/PIcp8XLSxQmsi5X5Twsy.pdf",
+              "source_label": "Wave Alpha phiên bản cổ điển 2025",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 117,
+          "label": "Wave Alpha phiên bản cổ điển 2024",
+          "year": 2024,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/vdigdIhCeSx0yAGELhU3.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=117",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "38fa8f6132053d71f437ca3b9c4bad359c4b42301bfcba02d729098c31f46509",
+          "maintenance_rules": [
+            {
+              "id": "honda-117-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 44,
+              "source_notes_pdf_page": 45,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/vdigdIhCeSx0yAGELhU3.pdf",
+              "source_label": "Wave Alpha phiên bản cổ điển 2024",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "vision",
+      "name": "Vision",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 120,
+          "label": "Vision cổ điển 2024",
+          "year": 2024,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/t0ae7gUVJJb4r1UkHKrK.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=120",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "d8d9b67123e5662885871b1faf12418ca8dbff3a38e08f694a2be65541017af1",
+          "maintenance_rules": [
+            {
+              "id": "honda-120-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 70,
+              "source_notes_pdf_page": 71,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/t0ae7gUVJJb4r1UkHKrK.pdf",
+              "source_label": "Vision cổ điển 2024",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 163,
+          "label": "Vision 2026",
+          "year": 2026,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/December2025/FgO9EU07CB768QM5Adl7.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=163",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "ce4140d5fc1a9f284d7b5d8829707fa0a963d16a03b1c146ec8669e5488e3342",
+          "maintenance_rules": [
+            {
+              "id": "honda-163-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 73,
+              "source_notes_pdf_page": 74,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/December2025/FgO9EU07CB768QM5Adl7.pdf",
+              "source_label": "Vision 2026",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác.",
+              "market_section": "Loại V, II V, III V, IV V, VI V, VII V, VIII V, IX V; đối chiếu mã xe trong sổ"
+            }
+          ]
+        },
+        {
+          "id": 143,
+          "label": "Vision 2025",
+          "year": 2025,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/VTlZXWuAU6WYR0QTisGc.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=143",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "79f09645c4768569c1a69d7614f209fc4281a26fe35f97cb143220ffff86993b",
+          "maintenance_rules": [
+            {
+              "id": "honda-143-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 73,
+              "source_notes_pdf_page": 74,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/VTlZXWuAU6WYR0QTisGc.pdf",
+              "source_label": "Vision 2025",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác.",
+              "market_section": "Loại V, II V, III V, IV V, VI V, VII V, VIII V, IX V; đối chiếu mã xe trong sổ"
+            }
+          ]
+        },
+        {
+          "id": 119,
+          "label": "Vision 2023",
+          "year": 2023,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/KV4oh5W47Rrx9qOoVIPW.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=119",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "b5920ee767252d7697766122aea816134794dea1f214cb131877f252ce07435b",
+          "maintenance_rules": [
+            {
+              "id": "honda-119-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 70,
+              "source_notes_pdf_page": 71,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/KV4oh5W47Rrx9qOoVIPW.pdf",
+              "source_label": "Vision 2023",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 118,
+          "label": "Vision 2020",
+          "year": 2020,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/VHp2KC4V1F29U9TVzmzW.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=118",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "87cc7de7ede6373feca5d6a49cb89b454ffa8f8442ed917152a8f1913cbca745",
+          "maintenance_rules": [
+            {
+              "id": "honda-118-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 67,
+              "source_notes_pdf_page": 68,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/VHp2KC4V1F29U9TVzmzW.pdf",
+              "source_label": "Vision 2020",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Tiêu chuẩn",
+        "Thể thao (Sport)",
+        "Khác / chưa xác định"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "future",
+      "name": "Future 125 FI",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 158,
+          "label": "Future 125 Fi 2026",
+          "year": 2026,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/October2025/4S8C4gHZTWoGUUdFaj0K.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=158",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "86fd290f7e22f1d9f76b3e46142422604921c377ef588643d5ee095fc17461c1",
+          "maintenance_rules": [
+            {
+              "id": "honda-158-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 41,
+              "source_notes_pdf_page": 42,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/October2025/4S8C4gHZTWoGUUdFaj0K.pdf",
+              "source_label": "Future 125 Fi 2026",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 125,
+          "label": "Future 125 FI 2025",
+          "year": 2025,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/AoqkctECwilfhh3sNNxU.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=125",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "86fd290f7e22f1d9f76b3e46142422604921c377ef588643d5ee095fc17461c1",
+          "maintenance_rules": [
+            {
+              "id": "honda-125-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 41,
+              "source_notes_pdf_page": 42,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/AoqkctECwilfhh3sNNxU.pdf",
+              "source_label": "Future 125 FI 2025",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 66,
+          "label": "Future 125 FI 2022",
+          "year": 2022,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/itn9YoNXl6STLMdBNUri.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=1&version=66",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "d9d19d0980645da1e6b441cb25412ce56bfd0dd9e070fcf1eeb852d08de4078d",
+          "maintenance_rules": [
+            {
+              "id": "honda-66-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 138,
+              "source_notes_pdf_page": 139,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/itn9YoNXl6STLMdBNUri.pdf",
+              "source_label": "Future 125 FI 2022",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác.",
+              "document_note": "PDF gộp nhiều phần; mốc dầu đọc ở phần thứ hai, trang PDF138; phải đối chiếu mã JC764/JC765 và sổ xe."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "lead",
+      "name": "LEAD 125",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 162,
+          "label": "LEAD ABS 2026",
+          "year": 2026,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/November2025/a1ImE0kmkoA3Vj3r5eVr.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=162",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "8aba70e8adc66eeefa562b4e2da8458ada7023d0a8b8d30a379a610588f4e45b",
+          "maintenance_rules": [
+            {
+              "id": "honda-162-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 86,
+              "source_notes_pdf_page": 87,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/November2025/a1ImE0kmkoA3Vj3r5eVr.pdf",
+              "source_label": "LEAD ABS 2026",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "sh125",
+      "name": "SH125i",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 161,
+          "label": "SH160i/125i 2026",
+          "year": 2026,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/November2025/UG9NBoEDyF0DHrjoTphA.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=161",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "e4db67f626f59440f2891711f19c69091f57fd586778585b0e572dc938d4849f",
+          "maintenance_rules": [
+            {
+              "id": "honda-161-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 121,
+              "source_notes_pdf_page": 122,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/November2025/UG9NBoEDyF0DHrjoTphA.pdf",
+              "source_label": "SH160i/125i 2026",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 115,
+          "label": "SH160i/125i 2024",
+          "year": 2024,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/IRI1wKHmapsXwHcA9BRy.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=115",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "8d102d83616981fcd48815ef6a64180bf8fccd0bc82f5fb9b8573d7ca37e090c",
+          "maintenance_rules": [
+            {
+              "id": "honda-115-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 92,
+              "source_notes_pdf_page": 93,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/IRI1wKHmapsXwHcA9BRy.pdf",
+              "source_label": "SH160i/125i 2024",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 96,
+          "label": "SH160i/125i 2023",
+          "year": 2023,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/TQzPVhHHotbm0pssiUri.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=96",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "84d3ed852361d26f2a3c02456b78539cb77d6518b03bb583baec68fa97eb50f6",
+          "maintenance_rules": [
+            {
+              "id": "honda-96-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 92,
+              "source_notes_pdf_page": 93,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/TQzPVhHHotbm0pssiUri.pdf",
+              "source_label": "SH160i/125i 2023",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 58,
+          "label": "SH150/125i 2021",
+          "year": 2021,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/Ti9DD1gkZnXDIPeZVYB1.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=58",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "301c63c703361a21bb7921bc7af92c27296a3466813949ac343bd66e03b303ce",
+          "maintenance_rules": [
+            {
+              "id": "honda-58-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 89,
+              "source_notes_pdf_page": 90,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/Ti9DD1gkZnXDIPeZVYB1.pdf",
+              "source_label": "SH150/125i 2021",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "sh150",
+      "name": "SH150i",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 58,
+          "label": "SH150/125i 2021",
+          "year": 2021,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/Ti9DD1gkZnXDIPeZVYB1.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=58",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "301c63c703361a21bb7921bc7af92c27296a3466813949ac343bd66e03b303ce",
+          "maintenance_rules": [
+            {
+              "id": "honda-58-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 89,
+              "source_notes_pdf_page": 90,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/Ti9DD1gkZnXDIPeZVYB1.pdf",
+              "source_label": "SH150/125i 2021",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "sh160",
+      "name": "SH160i",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 161,
+          "label": "SH160i/125i 2026",
+          "year": 2026,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/November2025/UG9NBoEDyF0DHrjoTphA.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=161",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "e4db67f626f59440f2891711f19c69091f57fd586778585b0e572dc938d4849f",
+          "maintenance_rules": [
+            {
+              "id": "honda-161-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 121,
+              "source_notes_pdf_page": 122,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/November2025/UG9NBoEDyF0DHrjoTphA.pdf",
+              "source_label": "SH160i/125i 2026",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 115,
+          "label": "SH160i/125i 2024",
+          "year": 2024,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/IRI1wKHmapsXwHcA9BRy.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=115",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "8d102d83616981fcd48815ef6a64180bf8fccd0bc82f5fb9b8573d7ca37e090c",
+          "maintenance_rules": [
+            {
+              "id": "honda-115-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 92,
+              "source_notes_pdf_page": 93,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/IRI1wKHmapsXwHcA9BRy.pdf",
+              "source_label": "SH160i/125i 2024",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 96,
+          "label": "SH160i/125i 2023",
+          "year": 2023,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/TQzPVhHHotbm0pssiUri.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=96",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "84d3ed852361d26f2a3c02456b78539cb77d6518b03bb583baec68fa97eb50f6",
+          "maintenance_rules": [
+            {
+              "id": "honda-96-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 92,
+              "source_notes_pdf_page": 93,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/TQzPVhHHotbm0pssiUri.pdf",
+              "source_label": "SH160i/125i 2023",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "sh350",
+      "name": "SH350i",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 142,
+          "label": "SH350i 2025",
+          "year": 2025,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/R8BlCU6VrTkb1Zitb6V5.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=142",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "d082afd3de8dfaa8869c9e3fedae905d16110207b183377cf0c852e0eafb6369",
+          "maintenance_rules": [
+            {
+              "id": "honda-142-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 12000,
+              "grid_start_km": 12000,
+              "yearly_replacement": true,
+              "source_pdf_page": 90,
+              "source_notes_pdf_page": 91,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/R8BlCU6VrTkb1Zitb6V5.pdf",
+              "source_label": "SH350i 2025",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 98,
+          "label": "SH350i 2023",
+          "year": 2023,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/wvvZIxuzSdpo44LlzsUX.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=98",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "bcc480971b38991fec2ae107c1fbdbcaea3725236da58a4bdb4fadfe2e26b8ff",
+          "maintenance_rules": [
+            {
+              "id": "honda-98-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 12000,
+              "grid_start_km": 12000,
+              "yearly_replacement": true,
+              "source_pdf_page": 89,
+              "source_notes_pdf_page": 90,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/wvvZIxuzSdpo44LlzsUX.pdf",
+              "source_label": "SH350i 2023",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 57,
+          "label": "SH350i 2021",
+          "year": 2021,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/FaWYCDcJxZA7WBBmkhq8.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=57",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "912349ad5c9f9991146181c33a8ef93364ba8036adc99684d54836bbdd495e67",
+          "maintenance_rules": [
+            {
+              "id": "honda-57-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 12000,
+              "grid_start_km": 12000,
+              "yearly_replacement": true,
+              "source_pdf_page": 89,
+              "source_notes_pdf_page": 90,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/FaWYCDcJxZA7WBBmkhq8.pdf",
+              "source_label": "SH350i 2021",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    },
+    {
+      "id": "shmode",
+      "name": "SH mode 125",
+      "requested_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "manuals": [
+        {
+          "id": 121,
+          "label": "Sh mode 2024",
+          "year": 2024,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/LqBycQConAOw1xIB2JDJ.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=121",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "b35a5a2d559c7bd43eb9c06b3c2d53ebfc41b544bc66b5552d14485c909cbc26",
+          "maintenance_rules": [
+            {
+              "id": "honda-121-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 80,
+              "source_notes_pdf_page": 81,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/LqBycQConAOw1xIB2JDJ.pdf",
+              "source_label": "Sh mode 2024",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 93,
+          "label": "SH mode 2023",
+          "year": 2023,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/mxqpo4kRgALNJk5iPtx7.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=93",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "2c15ebe271fcf22b1b7306f4eb91339144c02c72dc97a1092f8c627f49af1217",
+          "maintenance_rules": [
+            {
+              "id": "honda-93-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 75,
+              "source_notes_pdf_page": 76,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/mxqpo4kRgALNJk5iPtx7.pdf",
+              "source_label": "SH mode 2023",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 73,
+          "label": "Sh mode 2022",
+          "year": 2022,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/XkqWr6zDGQt0KqEUDAYg.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=73",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "c7607728af02190ba85e17ce7af3c44c368dbe7e0096988510901fe19bb15b0e",
+          "maintenance_rules": [
+            {
+              "id": "honda-73-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 75,
+              "source_notes_pdf_page": 76,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/XkqWr6zDGQt0KqEUDAYg.pdf",
+              "source_label": "Sh mode 2022",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        },
+        {
+          "id": 48,
+          "label": "Sh mode 2020",
+          "year": 2020,
+          "url": "https://cdn.honda.com.vn/motorbike-manual/September2025/ipcSi61wzcQkWHMiFpw9.pdf",
+          "index_url": "https://www.honda.com.vn/xe-may/dich-vu-sau-ban-hang/huong-dan-su-dung?category=2&version=48",
+          "status": "official_index_listing",
+          "intervals_verified": false,
+          "trim_scope": "not_verified",
+          "checked_at": "2026-10-24",
+          "verified_items": [
+            "engine_oil_replacement"
+          ],
+          "full_schedule_verified": false,
+          "pdf_sha256": "dfd4c4c142bea225024989c9617b286541b681083dc4dbb786b4d25c0e248afc",
+          "maintenance_rules": [
+            {
+              "id": "honda-48-engine-oil",
+              "item": "Thay dầu động cơ",
+              "kind": "engine_oil_replacement",
+              "verified_at": "2026-10-24",
+              "verification": "table_visual_review",
+              "first_km": 1000,
+              "grid_step_km": 6000,
+              "grid_start_km": 6000,
+              "yearly_replacement": true,
+              "source_pdf_page": 75,
+              "source_notes_pdf_page": 76,
+              "source_url": "https://cdn.honda.com.vn/motorbike-manual/September2025/ipcSi61wzcQkWHMiFpw9.pdf",
+              "source_label": "Sh mode 2020",
+              "scope": "selected_item_only; exact manual/year/model-code confirmation required",
+              "requires_manual_confirmation": true,
+              "condition_note": "Mốc tiêu chuẩn trên bảng; điều kiện sử dụng, bảo dưỡng và kiểm tra trước khi lái phải đối chiếu sách/HEAD. Không áp dụng tự động cho đời khác."
+            }
+          ]
+        }
+      ],
+      "variants": [
+        "Chưa xác định / nhập theo giấy tờ xe"
+      ],
+      "variant_note": "Tên phiên bản do người dùng khai báo; không khẳng định mọi phiên bản có ở mọi năm. Tài liệu model chưa xác minh riêng từng phiên bản.",
+      "year_note": "Năm người dùng nhập chưa được coi là đời xe hãng đã xác minh; đối chiếu giấy tờ/mã xe và HDSD."
+    }
+  ]
+}

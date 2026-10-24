@@ -159,264 +159,266 @@ class JourneyDetail extends ConsumerWidget {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            DropdownButton<String>(
-              value: j.category,
-              items: const [
-                DropdownMenuItem(value: 'school', child: Text('Đi học')),
-                DropdownMenuItem(value: 'work', child: Text('Đi làm')),
-                DropdownMenuItem(value: 'personal', child: Text('Cá nhân')),
-              ],
-              onChanged: (v) {
-                if (v != null) store.saveJourney(j.copy(category: v));
-              },
-            ),
-            SwitchListTile(
-              title: const Text('Hành trình hoạt động'),
-              subtitle: const Text(
-                'Tạm dừng cũng tắt các lịch nhắc đã liên kết; bật lại lịch trong mục Lịch nhắc.',
-              ),
-              value: j.enabled,
-              onChanged: (v) async {
-                try {
-                  final controller = ref.read(departureProvider);
-                  if (!v && controller.credential.isNotEmpty) {
-                    await controller.refresh();
-                    if (!controller.online) {
-                      throw StateError('Cần kết nối backend để tắt lịch nhắc.');
-                    }
-                    for (final s in controller.schedules.where(
-                      (s) => s.json['journey_id'] == id && s.enabled,
-                    )) {
-                      await controller.save({
-                        ...s.input(),
-                        'enabled': false,
-                      }, s.id);
-                    }
-                  }
-                  await store.saveJourney(j.copy(enabled: v));
-                } catch (e) {
-                  if (context.mounted) notifyError(context, e);
-                }
-              },
-            ),
-            Expanded(
-              child: TabBarView(
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverToBoxAdapter(
+              child: Column(
                 children: [
-                  for (final outbound in [true, false])
-                    Builder(
-                      builder: (context) {
-                        final trip = outbound ? j.outbound : j.inbound;
-                        final direction = outbound ? 'outbound' : 'inbound';
-                        return ListView(
-                          padding: const EdgeInsets.all(16),
-                          children: [
-                            if (trip == null)
-                              const Text(
-                                'Chưa chọn tuyến. Chiều về phải được tính riêng theo quy tắc đường một chiều.',
-                              )
-                            else ...[
-                              Text(
-                                '${trip.origin.name} → ${trip.destination.name}',
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                              if (trip.route != null)
-                                Text(
-                                  '${formatEta(trip.route!.seconds)} • ${(trip.route!.meters / 1000).toStringAsFixed(1)} km\nETA tham khảo lúc ${trip.route!.retrievedAt.toLocal()}\n${trip.route!.trafficAware ? 'ETA có traffic' : 'ETA routing, không có traffic realtime'}',
-                                ),
-                              FilledButton.icon(
-                                onPressed: j.enabled
-                                    ? () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => MapScreen(
-                                            plannedTrip: trip,
-                                            plannedVehicle: trip.vehicle,
-                                            journeyId: id,
-                                            direction: direction,
-                                          ),
-                                        ),
-                                      )
-                                    : null,
-                                icon: const Icon(Icons.navigation),
-                                label: const Text('Mở đúng tuyến đã lưu'),
-                              ),
-                              OutlinedButton.icon(
-                                onPressed: j.enabled
-                                    ? () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => ScheduleEditor(
-                                            seedTrip: trip,
-                                            journeyId: id,
-                                            direction: direction,
-                                          ),
-                                        ),
-                                      )
-                                    : null,
-                                icon: const Icon(Icons.alarm),
-                                label: const Text(
-                                  'Thiết lập lịch nhắc cho chiều này',
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () => editExpense(
-                                  context,
-                                  ref,
-                                  journeyId: id,
-                                  direction: direction,
-                                ),
-                                child: const Text('Thêm chi phí'),
-                              ),
-                            ],
-                            OutlinedButton(
-                              onPressed: () async {
-                                final picked = await Navigator.push<SavedTrip>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => RoutePlanner(
-                                      initial: trip,
-                                      name:
-                                          '${j.name} • ${outbound ? 'Chiều đi' : 'Chiều về'}',
-                                    ),
-                                  ),
-                                );
-                                if (picked != null) {
-                                  final latest = store.journeys
-                                      .where((v) => v.id == id)
-                                      .firstOrNull;
-                                  if (latest != null) {
-                                    final controller = ref.read(
-                                      departureProvider,
-                                    );
-                                    final linked = controller.schedules
-                                        .where(
-                                          (s) =>
-                                              s.json['journey_id'] == id &&
-                                              s.json['direction'] == direction,
-                                        )
-                                        .toList();
-                                    if (linked.isNotEmpty &&
-                                        !controller.online) {
-                                      if (context.mounted) {
-                                        notifyError(
-                                          context,
-                                          StateError(
-                                            'Kết nối backend trước khi đổi tuyến đang có lịch nhắc.',
-                                          ),
-                                        );
-                                      }
-                                      return;
-                                    }
-                                    try {
-                                      for (final schedule in linked) {
-                                        await controller.save({
-                                          ...schedule.input(),
-                                          'origin': picked.origin
-                                              .toJson()['coordinate'],
-                                          'destination': picked.destination
-                                              .toJson()['coordinate'],
-                                          'origin_name': picked.origin.name,
-                                          'destination_name':
-                                              picked.destination.name,
-                                          'vehicle': picked.vehicle,
-                                          'route_name': picked.name,
-                                          'initial_eta_s':
-                                              picked.route?.seconds,
-                                        }, schedule.id);
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        notifyError(context, e);
-                                      }
-                                      return;
-                                    }
-                                    await store.saveJourney(
-                                      outbound
-                                          ? latest.copy(outbound: picked)
-                                          : latest.copy(inbound: picked),
-                                    );
-                                  }
-                                }
-                              },
-                              child: Text(
-                                trip == null
-                                    ? 'Tìm và chọn tuyến'
-                                    : 'Chỉnh sửa tuyến / cập nhật ETA',
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const SchedulesScreen(),
-                                ),
-                              ),
-                              child: const Text('Quản lý lịch nhắc'),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                final yes = await showDialog<bool>(
-                                  context: context,
-                                  builder: (c) => AlertDialog(
-                                    title: const Text(
-                                      'Xóa hành trình và tắt lịch nhắc liên quan?',
-                                    ),
-                                    content: const Text(
-                                      'Lịch sử chuyến và khoản chi được giữ lại.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(c, false),
-                                        child: const Text('Hủy'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(c, true),
-                                        child: const Text('Xóa'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (yes != true) return;
-                                try {
-                                  final controller = ref.read(
-                                    departureProvider,
-                                  );
-                                  if (controller.credential.isNotEmpty) {
-                                    await controller.refresh();
-                                  }
-                                  if (controller.credential.isNotEmpty &&
-                                      !controller.online) {
-                                    throw StateError(
-                                      'Cần kết nối backend để xử lý lịch nhắc.',
-                                    );
-                                  }
-                                  for (final s in controller.schedules.where(
-                                    (s) => s.json['journey_id'] == id,
-                                  )) {
-                                    await controller.mutate(
-                                      'DELETE',
-                                      'schedules/${s.id}',
-                                    );
-                                  }
-                                  await store.deleteJourney(id);
-                                  if (context.mounted) Navigator.pop(context);
-                                } catch (e) {
-                                  if (context.mounted) notifyError(context, e);
-                                }
-                              },
-                              child: const Text('Xóa hành trình'),
-                            ),
-                          ],
-                        );
-                      },
+                  DropdownButton<String>(
+                    value: j.category,
+                    items: const [
+                      DropdownMenuItem(value: 'school', child: Text('Đi học')),
+                      DropdownMenuItem(value: 'work', child: Text('Đi làm')),
+                      DropdownMenuItem(
+                        value: 'personal',
+                        child: Text('Cá nhân'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) store.saveJourney(j.copy(category: v));
+                    },
+                  ),
+                  SwitchListTile(
+                    title: const Text('Hành trình hoạt động'),
+                    subtitle: const Text(
+                      'Tạm dừng cũng tắt các lịch nhắc đã liên kết; bật lại lịch trong mục Lịch nhắc.',
                     ),
+                    value: j.enabled,
+                    onChanged: (v) async {
+                      try {
+                        final controller = ref.read(departureProvider);
+                        if (!v && controller.credential.isNotEmpty) {
+                          await controller.refresh();
+                          if (!controller.online) {
+                            throw StateError(
+                              'Cần kết nối backend để tắt lịch nhắc.',
+                            );
+                          }
+                          for (final s in controller.schedules.where(
+                            (s) => s.json['journey_id'] == id && s.enabled,
+                          )) {
+                            await controller.save({
+                              ...s.input(),
+                              'enabled': false,
+                            }, s.id);
+                          }
+                        }
+                        await store.saveJourney(j.copy(enabled: v));
+                      } catch (e) {
+                        if (context.mounted) notifyError(context, e);
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
           ],
+          body: TabBarView(
+            children: [
+              for (final outbound in [true, false])
+                Builder(
+                  builder: (context) {
+                    final trip = outbound ? j.outbound : j.inbound;
+                    final direction = outbound ? 'outbound' : 'inbound';
+                    return ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        if (trip == null)
+                          const Text(
+                            'Chưa chọn tuyến. Chiều về phải được tính riêng theo quy tắc đường một chiều.',
+                          )
+                        else ...[
+                          Text(
+                            '${trip.origin.name} → ${trip.destination.name}',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          if (trip.route != null)
+                            Text(
+                              '${formatEta(trip.route!.seconds)} • ${(trip.route!.meters / 1000).toStringAsFixed(1)} km\nETA tham khảo lúc ${trip.route!.retrievedAt.toLocal()}\n${trip.route!.trafficAware ? 'ETA có traffic' : 'ETA routing, không có traffic realtime'}',
+                            ),
+                          FilledButton.icon(
+                            onPressed: j.enabled
+                                ? () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MapScreen(
+                                        plannedTrip: trip,
+                                        plannedVehicle: trip.vehicle,
+                                        journeyId: id,
+                                        direction: direction,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            icon: const Icon(Icons.navigation),
+                            label: const Text('Mở đúng tuyến đã lưu'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: j.enabled
+                                ? () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ScheduleEditor(
+                                        seedTrip: trip,
+                                        journeyId: id,
+                                        direction: direction,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            icon: const Icon(Icons.alarm),
+                            label: const Text(
+                              'Thiết lập lịch nhắc cho chiều này',
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => editExpense(
+                              context,
+                              ref,
+                              journeyId: id,
+                              direction: direction,
+                            ),
+                            child: const Text('Thêm chi phí'),
+                          ),
+                        ],
+                        OutlinedButton(
+                          onPressed: () async {
+                            final picked = await Navigator.push<SavedTrip>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => RoutePlanner(
+                                  initial: trip,
+                                  name:
+                                      '${j.name} • ${outbound ? 'Chiều đi' : 'Chiều về'}',
+                                ),
+                              ),
+                            );
+                            if (picked != null) {
+                              final latest = store.journeys
+                                  .where((v) => v.id == id)
+                                  .firstOrNull;
+                              if (latest != null) {
+                                final controller = ref.read(departureProvider);
+                                final linked = controller.schedules
+                                    .where(
+                                      (s) =>
+                                          s.json['journey_id'] == id &&
+                                          s.json['direction'] == direction,
+                                    )
+                                    .toList();
+                                if (linked.isNotEmpty && !controller.online) {
+                                  if (context.mounted) {
+                                    notifyError(
+                                      context,
+                                      StateError(
+                                        'Kết nối backend trước khi đổi tuyến đang có lịch nhắc.',
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+                                try {
+                                  for (final schedule in linked) {
+                                    await controller.save({
+                                      ...schedule.input(),
+                                      'origin': picked.origin
+                                          .toJson()['coordinate'],
+                                      'destination': picked.destination
+                                          .toJson()['coordinate'],
+                                      'origin_name': picked.origin.name,
+                                      'destination_name':
+                                          picked.destination.name,
+                                      'vehicle': picked.vehicle,
+                                      'route_name': picked.name,
+                                      'initial_eta_s': picked.route?.seconds,
+                                    }, schedule.id);
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    notifyError(context, e);
+                                  }
+                                  return;
+                                }
+                                await store.saveJourney(
+                                  outbound
+                                      ? latest.copy(outbound: picked)
+                                      : latest.copy(inbound: picked),
+                                );
+                              }
+                            }
+                          },
+                          child: Text(
+                            trip == null
+                                ? 'Tìm và chọn tuyến'
+                                : 'Chỉnh sửa tuyến / cập nhật ETA',
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SchedulesScreen(),
+                            ),
+                          ),
+                          child: const Text('Quản lý lịch nhắc'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final yes = await showDialog<bool>(
+                              context: context,
+                              builder: (c) => AlertDialog(
+                                title: const Text(
+                                  'Xóa hành trình và tắt lịch nhắc liên quan?',
+                                ),
+                                content: const Text(
+                                  'Lịch sử chuyến và khoản chi được giữ lại.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(c, false),
+                                    child: const Text('Hủy'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(c, true),
+                                    child: const Text('Xóa'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (yes != true) return;
+                            try {
+                              final controller = ref.read(departureProvider);
+                              if (controller.credential.isNotEmpty) {
+                                await controller.refresh();
+                              }
+                              if (controller.credential.isNotEmpty &&
+                                  !controller.online) {
+                                throw StateError(
+                                  'Cần kết nối backend để xử lý lịch nhắc.',
+                                );
+                              }
+                              for (final s in controller.schedules.where(
+                                (s) => s.json['journey_id'] == id,
+                              )) {
+                                await controller.mutate(
+                                  'DELETE',
+                                  'schedules/${s.id}',
+                                );
+                              }
+                              await store.deleteJourney(id);
+                              if (context.mounted) Navigator.pop(context);
+                            } catch (e) {
+                              if (context.mounted) notifyError(context, e);
+                            }
+                          },
+                          child: const Text('Xóa hành trình'),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -664,10 +666,18 @@ class _ExpenseEditorState extends ConsumerState<ExpenseEditor> {
             decoration: const InputDecoration(labelText: 'Số tiền (VND)'),
           ),
           DropdownButton<String>(
+            isExpanded: true,
             value: category,
             items: expenseTypes.entries
                 .map(
-                  (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  (e) => DropdownMenuItem(
+                    value: e.key,
+                    child: Text(
+                      e.value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 )
                 .toList(),
             onChanged: (v) => setState(() => category = v!),
@@ -695,11 +705,22 @@ class _ExpenseEditorState extends ConsumerState<ExpenseEditor> {
                 child: Text('Không gắn hành trình'),
               ),
               for (final j in store.journeys)
-                DropdownMenuItem(value: j.id, child: Text(j.name)),
+                DropdownMenuItem(
+                  value: j.id,
+                  child: Tooltip(
+                    message: j.name,
+                    child: Text(
+                      j.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
             ],
             onChanged: (v) => setState(() => journeyId = v == '' ? null : v),
           ),
           DropdownButton<String>(
+            isExpanded: true,
             value: direction ?? '',
             items: const [
               DropdownMenuItem(value: '', child: Text('Không chọn chiều')),

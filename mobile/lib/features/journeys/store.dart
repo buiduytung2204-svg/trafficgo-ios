@@ -63,6 +63,13 @@ class Journey {
   );
 }
 
+// DateTime.parse normalizes February31 to March3; financial dates must not do that.
+bool validExpenseDate(String value) {
+  if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) return false;
+  final parsed = DateTime.tryParse(value);
+  return parsed != null && parsed.toIso8601String().substring(0, 10) == value;
+}
+
 class Expense {
   final String id, category, date, notes;
   final String? journeyId, direction;
@@ -97,14 +104,23 @@ class Expense {
 }
 
 class JourneyStore extends ChangeNotifier {
+  bool _disposed = false;
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   final SharedPreferences prefs;
   List<Journey> journeys = [];
   List<Expense> expenses = [];
   List<Map<String, dynamic>> completed = [];
   String? loadError;
+  late final String storageKey;
   JourneyStore(this.prefs) {
+    storageKey = "${accountPrefix(prefs)}journeys.v1";
     try {
-      final j = jsonDecode(prefs.getString('journeys.v1') ?? '{}') as Map;
+      final j = jsonDecode(prefs.getString(storageKey) ?? '{}') as Map;
       journeys = (j['journeys'] as List? ?? [])
           .map((v) => Journey.fromJson(v))
           .toList();
@@ -123,7 +139,7 @@ class JourneyStore extends ChangeNotifier {
   Future<void> persist() async {
     if (loadError != null) throw StateError(loadError!);
     final ok = await prefs.setString(
-      'journeys.v1',
+      storageKey,
       jsonEncode({
         'version': 1,
         'journeys': journeys.map((j) => j.toJson()).toList(),
@@ -132,7 +148,7 @@ class JourneyStore extends ChangeNotifier {
       }),
     );
     if (!ok) throw StateError('Không lưu được dữ liệu trên thiết bị');
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> _queue = Future.value();
@@ -148,7 +164,7 @@ class JourneyStore extends ChangeNotifier {
         journeys = oldJourneys;
         expenses = oldExpenses;
         completed = oldCompleted;
-        notifyListeners();
+        if (!_disposed) notifyListeners();
         rethrow;
       }
     });
@@ -169,7 +185,7 @@ class JourneyStore extends ChangeNotifier {
     if (e.amount <= 0 ||
         e.amount > 1000000000 ||
         !expenseTypes.containsKey(e.category) ||
-        DateTime.tryParse(e.date) == null) {
+        !validExpenseDate(e.date)) {
       throw ArgumentError('Khoản chi không hợp lệ');
     }
     await change(

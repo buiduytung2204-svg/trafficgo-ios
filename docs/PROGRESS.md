@@ -160,3 +160,71 @@ Web-vehicles build succeeded (72.3s), served localhost:5173 and HTTP200 verified
 2026-10-24 final verification: flutter analyze --no-pub clean; flutter test --no-pub 51passed; pytest -q 80passed (one pre-existing Starlette/httpx deprecation warning). All7 fake-clock simulation scenarios passed without real provider calls. Flutter JS Web build build/web-journeys succeeded67.7s; existing secure-storage Wasm dry-run warning does not affect JS output. Codemagic diff empty.
 
 Local API/worker/static Web restarted after confirming no running copies. API health200; worker heartbeat2.5s verified. Live local HTTP integration verified schedule create/edit, outbound/inbound link roundtrip, formula06:40/06:55, revisedbuffer06:45, explicit completion, idempotent repeat, terminal409 and overview. Temporary test account's personal data deleted. No live routing/Geoapify requests were made by this integration. Web localhost:5173 serves exact latest main.dart.js hash; configured keys/tokens absent from web assets. Not a full interactive browser/physical-device acceptance test. No commit/push/deploy or APK in this feature delivery.
+
+## 2026-10-24 — Honda vehicle catalog and user-defined maintenance
+
+- Added Honda Vietnam catalog metadata from the public official manual index:11 model/displacement entries (Wave Alpha/RSX/classic, Vision, Future125FI, LEAD125, SH125/150/160/350, SH mode125), requested year selection2020–2026,27unique manual URLs/31model references. Exact index-label years only; missing years not filled from nearest model. Vision trim is user-declared; no unverified Sport-year availability assertion.
+- Catalog flags intervals_verified=false and trim_scope=not_verified throughout. No PDF redistribution or fabricated maintenance intervals. External link opens Honda index/terms. docs/VEHICLE_MAINTENANCE.md records coverage/missing-year matrix and all references.
+- Added local GarageStore (garage.v1, serialized writes/rollback/corruption protection), manual odometer profile, date/km reminder badges, explicit completion/idempotent service history and optional user-confirmed existing expense form. Never infer odometer from planned routes or create a cost automatically.
+- Entry points: Settings and map menu → Xe và bảo dưỡng. Notifications are in-app status only; maintenance worker/FCM/background reminders and automatic recurring intervals not implemented. No online service, credentials or routing API changes.
+- Added6maintenance tests for catalog provenance/year matching, date-or-km due logic, persistence, idempotency, corruption and widget states. Updated settings test to scroll to offscreen item after new menu entry.
+- Analyze clean; full Flutter suite/Web build verification in progress. Separate feature/vehicle-maintenance branch, no commit/push.
+
+Verification: all27unique Honda CDN manual links returned HTTP200 with PDF content-type (HEAD-only; no PDF corpus bundled). `flutter analyze --no-pub` clean;61Flutter tests passed, including6maintenance and4prior weekly-expense tests. Backend unchanged in this feature; previous80backend tests not rerun. Web build pending completion; no push/commit.
+
+Final: Flutter Web JS build build/web-maintenance succeeded90.4s (existing secure-storage Wasm dry-run warning; JS output valid). Served at localhost:5173; index/JS/catalog HTTP200, exact bundle hash and11model asset verified. Configured secret scan passed. Previous preview stopped; API/departure worker not restarted. No APK, commit or push.
+
+## 2026-10-24 — Verified engine-oil thresholds and mileage tests
+
+- Read27Honda PDFs locally for research; rendered table headers/oil rows and visually checked first/recurring/annual replacement marks. Added one scoped engine_oil_replacement rule per exact manual (31model references), source page/hash/notes; full schedule and trim still unverified. Vision2025/2026 uses Vietnam-typeV tablePDF73; Future2022 second full tablePDF138 documented with code check.
+- Standard table milestones: first1000 then6000/12000/etc for reviewed small-displacement models; SH350first1000 then12000/24000/36000. Annual replacement also recorded. No rule for missing model-years, no universal claim across2020–2026.
+- Added confirmed-manual oil setup with last-service km/date, absolute odometer grid, annual calendar/leap-day handling, wrong-year/confirmation validation. User still updates odometer manually. Foreground due badges only; no GPS accumulation/OS/background notification claim.
+- Prevented service history/expense IDs from colliding across oil cycles. Factory rule selection requires matching exact model/year plus user confirmation; hand edits revert to user-defined source.
+- Analyze clean;65Flutter tests passed. Mileage component:62simulation scenarios/310boundary observations, persisted reopen and actual widget change5999→6000. Tested annual-first, leap-day, no shift to7000after1000service, duplicate/next-cycle preservation. Backend unchanged; no provider requests or personal records changed.
+- Reports in ignored build/reports/TrafficGo-maintenance-mileage-test-20261024.zip (JSON/CSV/Markdown; no Honda PDFs). PDF inputs and renders remain ignored under build/tmp. No commit/push.
+Final web-mileage verification: JS Web build succeeded85.1s; served latest localhost:5173 with exact bundle hash and31source-scoped rule references verified over HTTP. Configured secret scan passed. Existing Wasm dry-run warning only; no APK/commit/push.
+
+
+## 2026-10-24 — Account personalization / mandatory first setup
+
+- Existing project retained; new accounts are local Windows backend username/password accounts, not Firebase. Additive `accounts` table/migration003 linked to existing users and Installation sessions. Scrypt salted passwords, input-redacted validation errors, bounded auth throttle, authenticated profile/setup and individual-session revocation.
+- New files: backend/app/accounts/{api,models,__init__}.py, backend/migrations/versions/003_accounts.py, backend/tests/test_accounts.py, mobile/lib/features/onboarding/{accounts,screens}.dart, mobile/test/personal_setup_test.dart, docs/PERSONALIZATION.md. Updated main/router, shared app state, journey/garage stores, departure controller/local-notification preferences, map defaults and settings entry.
+- New installs welcome → account → mandatory5-step setup: display name/purpose, selected vehicle using existing Honda editor, home/destination via existing picker, exact chosen real route plus optional independently calculated return route, recurring arrival/preparation/buffer schedule. Backend stores first schedule/profile atomically; stable local journey ID/backend setup idempotency prevent duplicates. Offline failures retain draft and do not mark setup complete.
+- Snapshot namespaces isolate local vehicle, journey/expense, saved place/route, history, settings, credential/cache and notification preferences per account. Guest keys remain untouched. Account switches invalidate camera/departure/personal stores and map element identity; previous account's camera/route cannot carry into next account.
+- Existing guests keep access to current data; account creation available in Settings. New account intentionally starts with separate data. Profile + schedule are server-persistent; vehicle/geometry/expenses remain per-device, not cross-device synced. No email recovery/MFA/session-expiration implementation or new background-push claim.
+- Backend:86tests passed (6new including additive-migration preservation); full Flutter70tests passed including draft/320px layout/exact geometry + linked first schedule; analyze clean; JS Web build succeeded. Test HTTP/providers are fake, no provider credits consumed by automated tests. No real user schedule, expense or garage entries created by tests.
+- Local SQLite snapshot created under ignored build/backups before applying migration003; existing row counts verified unchanged. Existing API restarted, health200 and live OpenAPI account/setup verified. Worker left running as before. Preview localhost:5173 now serves build/web-personalization; exact JS hash and Honda catalog HTTP200 verified; configured secret scan passed for changed/new source and served JS. Logs under ignored build/runtime.
+- No APK, commit, push, hosting or paid service enabled. Final rerun after camera isolation: analyze clean,70Flutter tests passed, JS Web build succeeded47.3s; served final bundle hash verified again. All work remains uncommitted on feature/vehicle-maintenance.
+
+
+## 2026-10-24 — Three-case personalization acceptance and fixes
+
+- Added mobile/test/personalization_cases_test.dart: real wizard widgets/picker/route-selection flow with explicit test-only routes, resume/offline/retry, account expense/vehicle/place isolation;320x694, text200%,5steps in light+dark, footer scroll reachability and vehicle editor.17PNG renders generated with Roboto/Material Icons; reviewed key screens. No browser was available (inventory empty/IAB unavailable), so not a browser/device acceptance claim.
+- Regression reproduced double submit (2POST vs expected1), fixed next() synchronous busy/completed guard. Delayed onboarded preference until backend success. Fixed long vehicle variant display with explicit ellipsis + full tooltip; shortened name input label/helper. Backend acceptance asserts actual occurrence times06:40prepare/06:55depart/07:30arrival for ETA25/prep15/buffer10.
+- Final:73Flutter tests pass;86backend tests pass; analyze clean; Web build success46.6s. Preview serves exact rebuilt JS hash; API health200; configured secrets absent from JS. No live provider API calls/real user data edits, no APK/push/deploy. Reports+17render images+logs packaged at ignored build/reports/TrafficGo-personalization-3-cases-20261024.zip; docs/PERSONALIZATION_TEST_CASES.md records scenarios and limitations.
+
+
+## 2026-10-24 — Full-function audit / additional regression coverage
+
+- Baseline86backend/73Flutter tests passed. Added33Flutter tests:7targeted regression/CRUD cases +13screens x2view/text/theme configurations. New tests reproduced4lifecycle/date/status failures and2layout failures that baseline missed.
+- Fixed JourneyStore/GarageStore late notify after disposal while completing original-account pending writes; strict civil expense dates; recovered account status and stale-response guard. JourneyDetail now uses NestedScrollView to avoid226px vertical overflow; expense dropdowns expanded/long selected names get ellipsis+tooltip. Corrected actual default vehicle display and local erase scope text. No real personal data deletion/migration in this audit.
+- Final106Flutter tests,86backend tests pass; analyze clean; Web build success43.9s; pip check and iOS static config pass.26additional render PNGs from actual Flutter widgets (Roboto/Material Icons) saved; reviewed key layouts. No connected browser (inventory empty), physical device/PostgreSQL/macOS/push test claim.
+- Bounded live smoke: health/traffic-status,2search,2routing,1basemap tile allHTTP200. Searches returned NHS Trung Van/CMC campus2 names; car3routes/motorcycle1route; all routing traffic_aware=false and traffic statusunavailable. No budget changes, no TomTom, no paid service. Worker heartbeat fresh28.2s/leaseactive at check.
+- Preview localhost:5173 now serves build/web-full-audit and exact JS hash verified. Configured secrets absent from changed/new source, report text and served JS. docs/TESTING.md updated to current Geoapify/Valhalla/account capabilities; docs/FULL_FUNCTION_AUDIT.md gives coverage/bugs/limitations.
+- ZIP build/reports/TrafficGo-full-function-audit-20261024.zip includes JSON/JUnit/logs/report and26renders. No APK, commit, push or online deployment.
+
+## 2026-10-24 � Optional traffic-aware routing
+- Shared configurable routing factory for API and departure worker; default Valhalla preserved.
+- TomTom fastest traffic-aware alternatives and provider-reported delay; one upstream routing attempt, no hidden retry on 429.
+- Motorcycle traffic profile guarded pending Vietnam verification; Valhalla fallback explicitly marked.
+- Existing Geoapify UI, saved routes, confirmation flow and budgets retained; secrets/environment not changed.
+- Validation: backend 91 passed (3 dependency deprecation warnings); Flutter analyze clean; Flutter 106 passed.
+- Live activation remains pending account licence review (Geoapify display, navigation, saved geometry/cache) and motorcycle-specific verification. No live TomTom request or traffic tile activation claimed.
+- See docs/TRAFFIC_ROUTING.md for configuration and evidence limits.
+
+## 2026-10-24 � Local TomTom motorcycle experiment
+Explicit user opt-in applied locally; separate experimental flag avoids claiming
+Vietnam coverage verified. One live budget-counted request returned 3 motorcycle
+routes with delays 0/84/123 seconds. Backend/worker restarted, health tomtom.
+Backend 91 tests passed; experimental flag tests 5 passed; analyze clean.
+No credentials changed, no push/deploy or paid plan activation.

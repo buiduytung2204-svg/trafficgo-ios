@@ -245,10 +245,15 @@ void main() {
         child: const MaterialApp(home: SettingsScreen()),
       ),
     );
-    expect(find.text('Phương tiện mặc định: Ô tô'), findsOneWidget);
     await tester.tap(find.byType(Switch).first);
     await tester.pump();
     expect(prefs.getBool('traffic'), false);
+    await tester.scrollUntilVisible(
+      find.text('Phương tiện mặc định: Ô tô'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Phương tiện mặc định: Ô tô'), findsOneWidget);
   });
   testWidgets('Onboarding supports large text on iPhone', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -301,9 +306,7 @@ void main() {
       findsOneWidget,
     );
   });
-  testWidgets('iPhone map switches to motorcycle', (
-    tester,
-  ) async {
+  testWidgets('iPhone map switches to motorcycle', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

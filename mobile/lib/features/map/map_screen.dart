@@ -1,3 +1,4 @@
+import '../maintenance/screens.dart';
 import '../journeys/screens.dart';
 import '../journeys/store.dart';
 import '../departure/controller.dart';
@@ -114,6 +115,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void initState() {
     super.initState();
+    vehicle = ref.read(stateProvider).defaultVehicle;
     if (widget.plannedTrip != null) {
       destination = widget.plannedTrip!.destination;
       vehicle = widget.plannedVehicle ?? widget.plannedTrip!.vehicle;
@@ -924,6 +926,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             child: Text('Hành trình đi học / đi làm'),
                           ),
                           PopupMenuItem(
+                            value: 'garage',
+                            child: Text('Xe và bảo dưỡng'),
+                          ),
+                          PopupMenuItem(
                             value: 'cost',
                             child: Text('Chi phí và thống kê'),
                           ),
@@ -951,6 +957,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               MaterialPageRoute(
                                 builder: (_) => value == 'journeys'
                                     ? const JourneysScreen()
+                                    : value == 'garage'
+                                    ? const GarageScreen()
                                     : const ExpensesScreen(),
                               ),
                             );
@@ -1292,7 +1300,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         ),
                       ),
                     Text(
-                      '${current!.provider} • ${current!.trafficAware ? 'ETA có xét traffic' : 'ETA KHÔNG có traffic realtime'} • ETA tham khảo cập nhật ${current!.retrievedAt.toLocal().toString().substring(0, 16)}${current!.fallbackReason == null ? '' : ' • dùng provider dự phòng'}',
+                      '${current!.provider} • ${current!.trafficAware ? 'ETA có xét traffic' : 'ETA KHÔNG có traffic realtime'}${current!.provider == 'tomtom' && vehicle == 'motorcycle' ? ' • Xe máy beta: kiểm tra biển báo và đường cấm' : ''} • ETA tham khảo cập nhật ${current!.retrievedAt.toLocal().toString().substring(0, 16)}${current!.fallbackReason == null ? '' : ' • dùng provider dự phòng'}',
                     ),
                     if (!navigating)
                       OutlinedButton.icon(

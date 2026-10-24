@@ -5,14 +5,14 @@ import logging
 import httpx
 from app.database import database_engine
 from app.config import settings
-from app.providers.routing import ValhallaRoutingProvider
+from app.providers.factory import create_routing_provider
 from .service import DepartureWorker
 
 
 async def run(once=False):
     engine = database_engine(settings.database_url)
     async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
-        worker = DepartureWorker(engine, ValhallaRoutingProvider(client, settings.valhalla_base_url),
+        worker = DepartureWorker(engine, create_routing_provider(client, settings),
             live_enabled=settings.departure_live_routing_enabled,
             daily_limit=settings.departure_daily_routing_limit)
         try:

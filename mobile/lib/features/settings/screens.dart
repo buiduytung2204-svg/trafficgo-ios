@@ -1,3 +1,6 @@
+import '../onboarding/accounts.dart';
+import '../onboarding/screens.dart';
+import '../maintenance/screens.dart';
 import '../map/map_screen.dart';
 import '../journeys/screens.dart';
 import '../journeys/place_picker.dart';
@@ -20,6 +23,30 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Cài đặt')),
       body: ListView(
         children: [
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: Text(
+              ref.watch(accountProvider).id == null
+                  ? 'Tạo tài khoản / đăng nhập'
+                  : 'Tài khoản và hồ sơ cá nhân',
+            ),
+            subtitle: const Text('Xe, địa điểm và lịch đi lại của bạn'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AccountScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.two_wheeler),
+            title: const Text('Xe và bảo dưỡng'),
+            subtitle: const Text(
+              'Honda 2020–2026 • tài liệu hãng và mốc bạn thiết lập',
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GarageScreen()),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.route),
             title: const Text('Hành trình và chi phí'),
@@ -125,9 +152,11 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ),
-          const ListTile(
-            title: Text('Phương tiện mặc định: Ô tô'),
-            subtitle: Text(
+          ListTile(
+            title: Text(
+              'Phương tiện mặc định: ${state.defaultVehicle == 'motorcycle' ? 'Xe máy' : 'Ô tô'}',
+            ),
+            subtitle: const Text(
               'Có thể chọn ô tô hoặc xe máy trên bản đồ. ETA Valhalla chưa tính traffic realtime.',
             ),
           ),
@@ -139,12 +168,17 @@ class SettingsScreen extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline),
-            title: const Text('Xóa dữ liệu trên thiết bị'),
+            title: const Text('Xóa địa điểm, tuyến và lịch sử tìm kiếm'),
+            subtitle: const Text(
+              'Giữ lại xe, hành trình, chi phí và lịch nhắc. Access token trên máy sẽ bị xóa.',
+            ),
             onTap: () async {
               final yes = await showDialog<bool>(
                 context: context,
                 builder: (c) => AlertDialog(
-                  title: const Text('Xóa địa điểm, lịch sử và access token?'),
+                  title: const Text(
+                    'Xóa địa điểm, tuyến đã lưu, lịch sử tìm kiếm và access token?',
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(c, false),

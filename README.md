@@ -37,3 +37,9 @@ lưu đúng tuyến hai chiều, tạo lịch nhắc, xác nhận chuyến hoàn
 Bản đồ/tìm kiếm dùng Geoapify, routing dùng Valhalla; TomTom đã ngừng nối vào API.
 ETA hiện chưa có traffic realtime. Lịch nhắc lưu ở backend Windows; hành trình và
 chi phí lưu trên thiết bị. Push khi app đóng còn cần Firebase/APNs.
+
+Danh mục Honda2020–2026 và hồ sơ/mốc bảo dưỡng do người dùng thiết lập đã có
+trong **Xe và bảo dưỡng**. Xem [nguồn tài liệu và phạm vi xác minh](docs/VEHICLE_MAINTENANCE.md).
+Chưa tự điền chu kỳ theo hãng hoặc gửi push bảo dưỡng khi ứng dụng đóng.
+
+Hồ sơ cá nhân, tài khoản và thiết lập xe/lịch lần đầu: [docs/PERSONALIZATION.md](docs/PERSONALIZATION.md).

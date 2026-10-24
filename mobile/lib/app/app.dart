@@ -1,3 +1,5 @@
+import '../features/onboarding/accounts.dart';
+import '../features/onboarding/screens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -138,7 +140,22 @@ class _HomeGateState extends ConsumerState<HomeGate> {
         );
       }
       final state = ref.watch(stateProvider);
-      if (state.onboarded) return const MapScreen();
+      final account = ref.watch(accountProvider);
+      if (account.id != null) {
+        return FutureBuilder(
+          future: account.ready,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (!account.complete) return const PersonalSetupScreen();
+            return MapScreen(key: ValueKey('account:${account.id}'));
+          },
+        );
+      }
+      if (state.onboarded) return const MapScreen(key: ValueKey('guest'));
       return Scaffold(
         body: SafeArea(
           child: Padding(
@@ -174,7 +191,12 @@ class _HomeGateState extends ConsumerState<HomeGate> {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: state.completeOnboarding,
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AccountScreen(),
+                            ),
+                          ),
                           child: const Text('Bắt đầu khám phá'),
                         ),
                       ),

@@ -7,12 +7,14 @@ class DepartureLocalNotifications {
   final plugin = FlutterLocalNotificationsPlugin();
   bool initialized = false;
   void Function()? onOpen;
-  DepartureLocalNotifications(this.prefs);
+  final String prefix;
+  DepartureLocalNotifications(this.prefs, {this.prefix = ""});
   bool get supported =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
-  bool get enabled => prefs.getBool('departure-local-notifications') ?? false;
+  bool get enabled =>
+      prefs.getBool('${prefix}departure-local-notifications') ?? false;
 
   Future<void> initialize() async {
     if (!supported || initialized) return;
@@ -45,15 +47,19 @@ class DepartureLocalNotifications {
                 IOSFlutterLocalNotificationsPlugin
               >()
               ?.requestPermissions(alert: true, badge: true, sound: true);
-    await prefs.setBool('departure-local-notifications', allowed == true);
+    await prefs.setBool(
+      '${prefix}departure-local-notifications',
+      allowed == true,
+    );
     return allowed == true;
   }
 
   Future<void> receive(List<Map<String, dynamic>> events) async {
     // Foreground polling only. No claim of background delivery or push.
     if (!enabled || !supported || !initialized) return;
-    final seen = (prefs.getStringList('departure-notified-events') ?? [])
-        .toSet();
+    final seen =
+        (prefs.getStringList('${prefix}departure-notified-events') ?? [])
+            .toSet();
     var count = 0;
     for (final event in events.reversed) {
       final id = event['id'] as String;
@@ -90,7 +96,7 @@ class DepartureLocalNotifications {
       count++;
     }
     await prefs.setStringList(
-      'departure-notified-events',
+      '${prefix}departure-notified-events',
       seen.toList().reversed.take(500).toList(),
     );
   }
