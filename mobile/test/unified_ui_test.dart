@@ -100,10 +100,10 @@ void main() {
     await t.tap(open);
     await t.pumpAndSettle();
     expect(identical(before, t.state(find.byType(MapScreen))), isTrue);
-    expect(find.text('Tổng quan'), findsOneWidget);
+    expect(find.text('Hủy'), findsOneWidget);
     expect(controller.camera.center, center);
     expect(controller.camera.zoom, zoom);
-    await t.tap(find.text('Tổng quan'));
+    await t.tap(find.text('Hủy'));
     await t.pumpAndSettle();
     expect(identical(before, t.state(find.byType(MapScreen))), isTrue);
     expect(t.takeException(), isNull);
@@ -125,6 +125,9 @@ void main() {
     await t.tap(find.text('Nhà'));
     await t.pumpAndSettle();
     expect(find.text('Thêm địa điểm'), findsOneWidget);
+    await t.tap(find.text('Hủy'));
+    await t.pumpAndSettle();
+    expect(find.text('Sẵn sàng cho ngày mới?'), findsOneWidget);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox.shrink());
     await t.pumpAndSettle();
@@ -143,6 +146,49 @@ void main() {
     await t.pumpAndSettle();
     expect(identical(before, t.state(find.byType(MapScreen))), isTrue);
     expect(find.text('Nhà đã lưu'), findsWidgets);
+    await t.tap(find.text('Hủy'));
+    await t.pumpAndSettle();
+    expect(find.text('Nhà đã lưu'), findsNothing);
+    expect(find.text('Tìm điểm đến'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      t.element(find.byType(TrafficHomeShell)),
+    );
+    expect(
+      container.read(stateProvider).saved.any((p) => p.name == 'Nhà đã lưu'),
+      isTrue,
+    );
+    expect(t.takeException(), isNull);
+    await t.pumpWidget(const SizedBox.shrink());
+    await t.pumpAndSettle();
+  });
+  testWidgets('Cancel standalone saved route returns to its previous screen', (
+    t,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await t.pumpWidget(
+      host(
+        Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => MapScreen(plannedTrip: fixtures.trip()),
+                ),
+              ),
+              child: const Text('Mở hành trình'),
+            ),
+          ),
+        ),
+        prefs,
+      ),
+    );
+    await t.tap(find.text('Mở hành trình'));
+    await t.pumpAndSettle();
+    expect(find.text('Hủy'), findsOneWidget);
+    await t.tap(find.text('Hủy'));
+    await t.pumpAndSettle();
+    expect(find.byType(MapScreen), findsNothing);
+    expect(find.text('Mở hành trình'), findsOneWidget);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox.shrink());
     await t.pumpAndSettle();

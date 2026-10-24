@@ -170,7 +170,7 @@ class _HomeGateState extends ConsumerState<HomeGate> {
                       Text(
                         'Hà Nội,\nđi nhẹ nhàng hơn.',
                         style: Theme.of(context).textTheme.displaySmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 20),
                       const Text(

@@ -1,10 +1,13 @@
 import '../../core/design/components.dart';
+
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+
 import '../../app/state.dart';
 import '../../core/api.dart';
 import '../../core/models.dart';
@@ -114,7 +117,18 @@ class _PlacePickerState extends ConsumerState<PlacePicker> {
   Widget build(BuildContext context) {
     final state = ref.watch(stateProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          TextButton(
+            onPressed: () {
+              FocusScope.of(context).unfocus();
+              Navigator.pop(context);
+            },
+            child: const Text('Hủy'),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(

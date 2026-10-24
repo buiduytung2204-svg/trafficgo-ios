@@ -178,7 +178,7 @@ class _NextDepartureCardState extends ConsumerState<NextDepartureCard> {
                         .split(' ')
                         .last,
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: -1.5,
                 color: colors.primary,
               ),

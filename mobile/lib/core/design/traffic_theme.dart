@@ -4,6 +4,8 @@ import 'package:forui/forui.dart';
 /// Shared tokens: Forui is the source of truth; existing Material forms inherit
 /// the same palette so their behaviour can be retained during the migration.
 abstract final class TrafficTokens {
+  static const fontFamily = 'PlusJakartaSans';
+  static const fontFallback = <String>[];
   static const brand = Color(0xff20252b);
   static const lime = Color(0xffc6f36b);
   static const limeBright = Color(0xffd9fa84);
@@ -42,22 +44,39 @@ abstract final class TrafficTokens {
         foreground: dark ? const Color(0xfff5f6f2) : const Color(0xff171c24),
       ),
       typography: base.typography.copyWith(
-        body: FTypeface.inherit(
-          colors: base.colors,
-          touch: true,
-          fontFamily: 'BeVietnamPro',
-        ),
-        display: FTypeface.inherit(
-          colors: base.colors,
-          touch: true,
-          fontFamily: 'BeVietnamPro',
-        ),
+        body: _typeface(base.colors, false),
+        display: _typeface(base.colors, true),
       ),
       style: base.style.copyWith(
         borderRadius: const FBorderRadius(
           lg: BorderRadius.all(Radius.circular(radius)),
         ),
       ),
+    );
+  }
+
+  static FTypeface _typeface(FColors colors, bool display) {
+    final type = FTypeface.inherit(
+      colors: colors,
+      touch: true,
+      fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
+    );
+    return type.copyWith(
+      xs3: type.xs3.copyWith(fontWeight: FontWeight.w500),
+      xl4: type.xl4.copyWith(fontWeight: FontWeight.w700),
+      xl5: type.xl5.copyWith(fontWeight: FontWeight.w700),
+      xl6: type.xl6.copyWith(fontWeight: FontWeight.w700),
+      xl7: type.xl7.copyWith(fontWeight: FontWeight.w700),
+      xl8: type.xl8.copyWith(fontWeight: FontWeight.w700),
+      xs2: type.xs2.copyWith(fontWeight: FontWeight.w600),
+      xs: type.xs.copyWith(fontWeight: FontWeight.w500),
+      sm: type.sm.copyWith(fontWeight: FontWeight.w500),
+      md: type.md.copyWith(fontWeight: FontWeight.w600),
+      lg: type.lg.copyWith(fontWeight: FontWeight.w700),
+      xl: type.xl.copyWith(fontWeight: FontWeight.w700),
+      xl2: type.xl2.copyWith(fontWeight: FontWeight.w700),
+      xl3: type.xl3.copyWith(fontWeight: FontWeight.w700),
     );
   }
 
@@ -95,23 +114,27 @@ abstract final class TrafficTokens {
     );
     return base.copyWith(
       colorScheme: colors,
+      primaryTextTheme: base.primaryTextTheme.apply(
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFallback,
+      ),
       scaffoldBackgroundColor: forui(brightness).colors.background,
       textTheme: base.textTheme
           .copyWith(
             bodyLarge: const TextStyle(
-              fontSize: 17,
+              fontSize: 16,
               height: 1.45,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
             ),
             bodyMedium: const TextStyle(
               fontSize: 16,
               height: 1.45,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
             ),
             bodySmall: const TextStyle(
               fontSize: 14,
               height: 1.4,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
             ),
             titleMedium: const TextStyle(
               fontSize: 18,
@@ -126,12 +149,39 @@ abstract final class TrafficTokens {
             headlineSmall: const TextStyle(
               fontSize: 26,
               height: 1.2,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
             headlineMedium: const TextStyle(
               fontSize: 32,
               height: 1.15,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
+            ),
+            labelSmall: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            labelMedium: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            titleSmall: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            displaySmall: const TextStyle(
+              fontSize: 36,
+              height: 1.15,
+              fontWeight: FontWeight.w700,
+            ),
+            displayMedium: const TextStyle(
+              fontSize: 45,
+              height: 1.15,
+              fontWeight: FontWeight.w700,
+            ),
+            displayLarge: const TextStyle(
+              fontSize: 57,
+              height: 1.1,
+              fontWeight: FontWeight.w700,
             ),
             labelLarge: const TextStyle(
               fontSize: 15,
@@ -140,7 +190,8 @@ abstract final class TrafficTokens {
             ),
           )
           .apply(
-            fontFamily: 'BeVietnamPro',
+            fontFamily: fontFamily,
+            fontFamilyFallback: fontFallback,
             bodyColor: colors.onSurface,
             displayColor: colors.onSurface,
           ),
@@ -159,9 +210,10 @@ abstract final class TrafficTokens {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontFamily: 'BeVietnamPro',
+          fontFamily: fontFamily,
+          fontFamilyFallback: fontFallback,
           color: colors.onSurface,
-          fontSize: 22,
+          fontSize: 26,
           fontWeight: FontWeight.w700,
           letterSpacing: -.5,
         ),
@@ -190,6 +242,12 @@ abstract final class TrafficTokens {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFamilyFallback: fontFallback,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
           minimumSize: const Size(44, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -199,6 +257,12 @@ abstract final class TrafficTokens {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFamilyFallback: fontFallback,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
           minimumSize: const Size(44, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -206,7 +270,15 @@ abstract final class TrafficTokens {
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+        style: TextButton.styleFrom(
+          textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFamilyFallback: fontFallback,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+          minimumSize: const Size(48, 48),
+        ),
       ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -230,11 +302,10 @@ abstract final class TrafficTokens {
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
-            fontFamily: 'BeVietnamPro',
+            fontFamily: fontFamily,
+            fontFamilyFallback: fontFallback,
             fontSize: 12,
-            fontWeight: states.contains(WidgetState.selected)
-                ? FontWeight.w700
-                : FontWeight.w500,
+            fontWeight: FontWeight.w600,
             color: states.contains(WidgetState.selected)
                 ? colors.primary
                 : colors.onSurfaceVariant,

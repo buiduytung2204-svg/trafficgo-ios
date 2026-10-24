@@ -3,6 +3,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 import 'components.dart';
+import 'traffic_theme.dart';
 
 WoltModalType trafficModalType(BuildContext context) {
   final duration = TrafficMotion.duration(context);
@@ -121,6 +122,12 @@ Future<DateTime?> pickTrafficDate(
                 data: ShadThemeData(
                   brightness: Theme.of(c).brightness,
                   colorScheme: scheme,
+                  textTheme: ShadTextTheme(
+                    family: TrafficTokens.fontFamily,
+                    p: Theme.of(c).textTheme.bodyMedium,
+                    small: Theme.of(c).textTheme.bodySmall,
+                    muted: Theme.of(c).textTheme.bodySmall,
+                  ),
                 ),
                 child: ShadCalendar(
                   selected: selected,

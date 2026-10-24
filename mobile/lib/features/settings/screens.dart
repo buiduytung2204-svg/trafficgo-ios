@@ -51,7 +51,7 @@ class SettingsScreen extends ConsumerWidget {
                       : nickname.toString().characters.first.toUpperCase(),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     fontSize: 24,
                   ),
                 ),

@@ -36,6 +36,7 @@ class MapScreen extends ConsumerStatefulWidget {
   final bool compact;
   final Place? initialDestination;
   final VoidCallback? onExpand;
+  final VoidCallback? onCancelSearch;
   final BaseMapSource? source;
   final SavedTrip? plannedTrip;
   final String? plannedVehicle;
@@ -47,6 +48,7 @@ class MapScreen extends ConsumerStatefulWidget {
     this.compact = false,
     this.initialDestination,
     this.onExpand,
+    this.onCancelSearch,
     this.plannedTrip,
     this.plannedVehicle,
     this.journeyId,
@@ -371,6 +373,31 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
   }
 
+  void cancelSearch() {
+    debounce?.cancel();
+    searchCancel?.cancel();
+    searchGeneration++;
+    FocusScope.of(context).unfocus();
+    query.clear();
+    setState(() {
+      destination = null;
+      routes = [];
+      results = [];
+      refreshedProposal = null;
+      selected = 0;
+      searching = false;
+      loading = false;
+      error = null;
+    });
+    if (widget.onCancelSearch != null) {
+      widget.onCancelSearch!();
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      context.go('/');
+    }
+  }
+
   void choose(Place p) {
     if (navigating) stop();
     searchCancel?.cancel();
@@ -424,9 +451,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
         );
       }
     } catch (e) {
-      fail(e);
+      if (mounted && destination == target) fail(e);
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted && destination == target) setState(() => loading = false);
     }
   }
 
@@ -1093,9 +1120,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                   'TrafficGo',
                                   overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
                               ),
+                              if (!navigating)
+                                TextButton.icon(
+                                  onPressed: cancelSearch,
+                                  icon: const Icon(Icons.close_rounded),
+                                  label: const Text('Hủy'),
+                                ),
                               PopupMenuButton<String>(
                                 tooltip: 'Hành trình và chi phí',
                                 icon: const Icon(Icons.apps),

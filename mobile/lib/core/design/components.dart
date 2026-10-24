@@ -61,7 +61,7 @@ class MetricPanel extends StatelessWidget {
             Text(
               value,
               style: Theme.of(context).textTheme.headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1),
+                  ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -1),
             ),
           ],
         ),
@@ -227,7 +227,15 @@ class _TrafficPrimaryButtonState extends State<TrafficPrimaryButton> {
                 mainAxisSize: MainAxisSize.min,
                 onPress: widget.onPressed == null || busy ? null : runAction,
                 builder: (context, style, text, icons, progress, child) =>
-                    Flexible(child: child!),
+                    Flexible(
+                      child: DefaultTextStyle.merge(
+                        style: const TextStyle(
+                          fontFamily: TrafficTokens.fontFamily,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        child: child!,
+                      ),
+                    ),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -364,7 +372,7 @@ class SectionHeading extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -.6),
+                ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -.6),
           ),
           const SizedBox(height: 8),
           Text(

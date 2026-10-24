@@ -33,15 +33,10 @@ void main() {
       ),
     );
     if (const bool.fromEnvironment('CAPTURE_UI')) {
-      for (final name in [
-        'Regular',
-        'Medium',
-        'SemiBold',
-        'Bold',
-        'ExtraBold',
-      ]) {
-        await (FontLoader('BeVietnamPro')
-              ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-$name.ttf')))
+      for (final name in ['Medium', 'SemiBold', 'Bold']) {
+        await (FontLoader('PlusJakartaSans')..addFont(
+              rootBundle.load('assets/fonts/PlusJakartaSans-$name.ttf'),
+            ))
             .load();
       }
       await (FontLoader(
@@ -76,10 +71,20 @@ void main() {
     'route_planner': () => RoutePlanner(initial: fixtures.trip()),
     'account_signup': () => const AccountScreen(),
   };
-  for (final large in [false, true]) {
+  for (final variant in [
+    (1.0, false),
+    (1.5, false),
+    (2.0, false),
+    (1.0, true),
+    (1.5, true),
+    (2.0, true),
+  ]) {
+    final scale = variant.$1;
+    final dark = variant.$2;
+    final large = scale > 1;
     for (final entry in screens.entries) {
       testWidgets(
-        '${entry.key}: ${large ? '320px text200 dark' : '390px standard light'}',
+        '${entry.key}: text${(scale * 100).round()} ${large ? '320px' : '390px'} ${dark ? 'dark' : 'light'}',
         (t) async {
           SharedPreferences.setMockInitialValues({});
           FlutterSecureStorage.setMockInitialValues({});
@@ -169,11 +174,11 @@ void main() {
                 supportedLocales: const [Locale('vi')],
                 localizationsDelegates: GlobalMaterialLocalizations.delegates,
                 theme: TrafficTokens.material(
-                  large ? Brightness.dark : Brightness.light,
+                  dark ? Brightness.dark : Brightness.light,
                 ),
                 builder: (context, child) => MediaQuery(
                   data: MediaQuery.of(context)
-                      .copyWith(textScaler: TextScaler.linear(large ? 2 : 1)),
+                      .copyWith(textScaler: TextScaler.linear(scale)),
                   child: TrafficDesignScope(
                     child: RepaintBoundary(
                       key: fixtures.boundary,
@@ -189,7 +194,7 @@ void main() {
           expect(t.takeException(), isNull, reason: 'initial ${entry.key}');
           await fixtures.capture(
             t,
-            'full-audit-${entry.key}-${large ? 'large-dark' : 'normal-light'}',
+            'full-audit-${entry.key}-${(scale * 100).round()}-${dark ? 'dark' : 'light'}',
           );
           final lists = find.byType(ListView);
           if (lists.evaluate().isNotEmpty) {
@@ -200,7 +205,7 @@ void main() {
               if (i == 0 && entry.key == 'expenses_statistics') {
                 await fixtures.capture(
                   t,
-                  'full-audit-expense-chart-${large ? 'large-dark' : 'normal-light'}',
+                  'full-audit-expense-chart-${(scale * 100).round()}-${dark ? 'dark' : 'light'}',
                 );
               }
             }

@@ -113,6 +113,10 @@ class _HomeOverviewState extends ConsumerState<HomeOverview> {
       key: mapKey,
       compact: !expanded,
       onExpand: expand,
+      onCancelSearch: () => setState(() {
+        expanded = false;
+        destination = null;
+      }),
       initialDestination: destination,
       plannedTrip: trip,
     );
@@ -122,22 +126,7 @@ class _HomeOverviewState extends ConsumerState<HomeOverview> {
         onPopInvokedWithResult: (didPop, _) {
           if (!didPop) setState(() => expanded = false);
         },
-        child: Stack(
-          children: [
-            map,
-            Positioned(
-              left: 12,
-              bottom: 12,
-              child: SafeArea(
-                child: FilledButton.icon(
-                  onPressed: () => setState(() => expanded = false),
-                  icon: const Icon(Icons.dashboard_outlined),
-                  label: const Text('Tổng quan'),
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: map,
       );
     }
     return SafeArea(
@@ -180,7 +169,7 @@ class _HomeOverviewState extends ConsumerState<HomeOverview> {
                               style: const TextStyle(
                                 fontSize: 28,
                                 height: 1.2,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 letterSpacing: -1.2,
                               ),
                             ),
@@ -345,7 +334,9 @@ class LimeDepartureCard extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           child: DefaultTextStyle(
             style: const TextStyle(
-              fontFamily: 'BeVietnamPro',
+              fontFamily: TrafficTokens.fontFamily,
+              fontFamilyFallback: TrafficTokens.fontFallback,
+              fontWeight: FontWeight.w500,
               color: Color(0xff171c24),
               fontSize: 14,
               height: 1.3,
@@ -377,7 +368,7 @@ class LimeDepartureCard extends ConsumerWidget {
                           : next.name,
                       style: const TextStyle(
                         fontSize: 23,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: -.7,
                       ),
                     ),
@@ -391,7 +382,7 @@ class LimeDepartureCard extends ConsumerWidget {
                                   .last,
                         style: TextStyle(
                           fontSize: departure == null ? 26 : 52,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           height: 1.1,
                           letterSpacing: -2,
                         ),
