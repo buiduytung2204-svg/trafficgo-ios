@@ -1,3 +1,4 @@
+import 'package:trafficgo/core/design/components.dart';
 // Three isolated acceptance cases. Routing/places are test fixtures, never live traffic.
 import 'dart:convert';
 import 'dart:io';
@@ -161,6 +162,13 @@ fixture.SetupAccount account(
 }
 
 Future<void> press(WidgetTester t, String text) async {
+  if (find.text(text).evaluate().isEmpty) {
+    await t.scrollUntilVisible(
+      find.text(text),
+      250,
+      scrollable: find.byType(Scrollable).last,
+    );
+  }
   await t.ensureVisible(find.text(text).last);
   await t.pumpAndSettle();
   await t.tap(find.text(text).last);
@@ -336,7 +344,7 @@ void main() {
             reason: '320px, text200%, dark=$dark, step=$step',
           );
           final submit = find.widgetWithText(
-            FilledButton,
+            TrafficPrimaryButton,
             step == 4 ? 'Hoàn tất và tạo lịch' : 'Tiếp tục',
           );
           await t.scrollUntilVisible(

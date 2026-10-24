@@ -237,6 +237,7 @@ void main() {
         -400,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
       expect(find.text('Vui lòng nhập'), findsWidgets);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());

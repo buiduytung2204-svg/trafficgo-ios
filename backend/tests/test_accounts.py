@@ -10,7 +10,7 @@ def reset_auth_limits():
     windows.clear()
 
 def register(client, name='student'):
-    r = client.post('/api/v1/accounts/register', json={'username': name, 'password':'local-test-password-123'})
+    r = client.post('/api/v1/accounts/register', json={'username': name, 'nickname':'Bạn thử nghiệm', 'password':'local-test-password-123'})
     assert r.status_code == 201, r.text
     return r.json()
 
@@ -37,7 +37,7 @@ def test_register_login_and_session_revocation(client):
     a = register(client)
     assert a['profile']['setup_complete'] is False and 'password_hash' not in a
     assert client.get('/api/v1/accounts/me',headers=auth(a)).json()['user_id'] == a['user_id']
-    assert client.post('/api/v1/accounts/register',json={'username':'STUDENT','password':'another-password-123'}).status_code == 409
+    assert client.post('/api/v1/accounts/register',json={'username':'STUDENT','nickname':'Student','password':'another-password-123'}).status_code == 409
     assert client.post('/api/v1/accounts/login',json={'username':'STUDENT','password':'wrong-password'}).status_code == 401
     assert client.post('/api/v1/accounts/login',json={'username':'absent','password':'wrong-password'}).status_code == 401
     b = client.post('/api/v1/accounts/login',json={'username':'STUDENT','password':'local-test-password-123'}).json()
@@ -112,3 +112,17 @@ def test_additive_migration_preserves_guest_records(tmp_path, monkeypatch):
         assert 'accounts' in inspect(connection).get_table_names()
         assert connection.execute(text('SELECT version_num FROM alembic_version')).scalar() == '003'
     engine.dispose()
+
+
+def test_registration_nickname_required_and_persistent(client):
+    base = {'username':'nicktest', 'password':'local-test-password-123'}
+    for extra in ({}, {'nickname':'   '}, {'nickname':'x'*101}):
+        assert client.post('/api/v1/accounts/register', json={**base, **extra}).status_code == 422
+    response = client.post('/api/v1/accounts/register', json={**base, 'nickname':'  Tùng  '})
+    assert response.status_code == 201
+    account = response.json()
+    assert account['profile']['nickname'] == 'Tùng'
+    assert client.get('/api/v1/accounts/me', headers=auth(account)).json()['profile']['nickname'] == 'Tùng'
+    result = client.post('/api/v1/accounts/setup', json=setup_body(account), headers=auth(account))
+    assert result.status_code == 200
+    assert result.json()['profile']['nickname'] == 'Tùng'

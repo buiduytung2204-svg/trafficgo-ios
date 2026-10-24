@@ -1,3 +1,4 @@
+import 'package:trafficgo/core/design/traffic_theme.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -151,19 +152,19 @@ void main() {
                 locale: const Locale('vi'),
                 supportedLocales: const [Locale('vi')],
                 localizationsDelegates: GlobalMaterialLocalizations.delegates,
-                theme: ThemeData(
-                  useMaterial3: true,
-                  fontFamily: 'Roboto',
-                  colorScheme: ColorScheme.fromSeed(
-                    seedColor: const Color(0xff007c78),
-                    brightness: large ? Brightness.dark : Brightness.light,
-                  ),
+                theme: TrafficTokens.material(
+                  large ? Brightness.dark : Brightness.light,
                 ),
                 builder: (context, child) => MediaQuery(
                   data: MediaQuery.of(
                     context,
                   ).copyWith(textScaler: TextScaler.linear(large ? 2 : 1)),
-                  child: RepaintBoundary(key: fixtures.boundary, child: child!),
+                  child: TrafficDesignScope(
+                    child: RepaintBoundary(
+                      key: fixtures.boundary,
+                      child: child!,
+                    ),
+                  ),
                 ),
                 home: entry.value(),
               ),
@@ -181,6 +182,12 @@ void main() {
               await t.drag(lists.last, const Offset(0, -500));
               await t.pumpAndSettle();
               expect(t.takeException(), isNull, reason: 'scroll ${entry.key}');
+              if (i == 0 && entry.key == 'expenses_statistics') {
+                await fixtures.capture(
+                  t,
+                  'full-audit-expense-chart-${large ? 'large-dark' : 'normal-light'}',
+                );
+              }
             }
           }
           await t.pumpWidget(const SizedBox.shrink());

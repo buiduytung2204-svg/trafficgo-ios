@@ -213,7 +213,7 @@ Final web-mileage verification: JS Web build succeeded85.1s; served latest local
 - Preview localhost:5173 now serves build/web-full-audit and exact JS hash verified. Configured secrets absent from changed/new source, report text and served JS. docs/TESTING.md updated to current Geoapify/Valhalla/account capabilities; docs/FULL_FUNCTION_AUDIT.md gives coverage/bugs/limitations.
 - ZIP build/reports/TrafficGo-full-function-audit-20261024.zip includes JSON/JUnit/logs/report and26renders. No APK, commit, push or online deployment.
 
-## 2026-10-24 � Optional traffic-aware routing
+## 2026-10-24 — Optional traffic-aware routing
 - Shared configurable routing factory for API and departure worker; default Valhalla preserved.
 - TomTom fastest traffic-aware alternatives and provider-reported delay; one upstream routing attempt, no hidden retry on 429.
 - Motorcycle traffic profile guarded pending Vietnam verification; Valhalla fallback explicitly marked.
@@ -222,9 +222,48 @@ Final web-mileage verification: JS Web build succeeded85.1s; served latest local
 - Live activation remains pending account licence review (Geoapify display, navigation, saved geometry/cache) and motorcycle-specific verification. No live TomTom request or traffic tile activation claimed.
 - See docs/TRAFFIC_ROUTING.md for configuration and evidence limits.
 
-## 2026-10-24 � Local TomTom motorcycle experiment
+## 2026-10-24 — Local TomTom motorcycle experiment
 Explicit user opt-in applied locally; separate experimental flag avoids claiming
 Vietnam coverage verified. One live budget-counted request returned 3 motorcycle
 routes with delays 0/84/123 seconds. Backend/worker restarted, health tomtom.
 Backend 91 tests passed; experimental flag tests 5 passed; analyze clean.
 No credentials changed, no push/deploy or paid plan activation.
+
+
+## 2026-10-24 — Unified UI/UX (feature/unified-ui)
+- Baseline: 106 Flutter tests; source audit preserved existing business flows.
+- Forui 0.27.6 primary actions/theme/cards, Shadcn UI 0.57.3 calendars,
+  Wolt Modal Sheet 0.11.0 forms/confirmation, FL Chart 1.3.0 actual expenses.
+  Trufi GPL reviewed for UX only; no code/assets imported.
+- Four lazy retained tabs, map route cards, saved-place shortcuts, persistent
+  map sheet, shared light/dark tokens, refreshed journeys/garage/profile/setup.
+- Tests: 113 Flutter passed, analyze clean, 91 backend passed (3 deprecations).
+  Confirm/reject reroute, map identity retained, modal expense with keyboard,
+  calendar confirmation and 26 light/dark/large-text layout cases covered.
+- Web release build passed; localhost:5173 now serves build/web-ui-refresh.
+  SHA match verified, source/bundle configured-secret scan passed.
+- 28 widget-rendered QA images with isolated fixtures in build/reports/ui-refresh;
+  report bundle build/reports/TrafficGo-UI-refresh.zip. Not device/live traffic captures.
+- JS grew 4,159,140 -> 4,612,920 bytes (~11%); device performance not measured.
+- No provider/storage/credentials changes, no deploy/push, Codemagic unchanged.
+- iOS, actual keyboard/accessibility services and closed-app push unverified.
+- See docs/UI_REDESIGN.md and docs/licenses/ for decisions and licences.
+
+
+## 2026-10-24 — QA14 new-user accelerated acceptance
+- New isolated account registered/setup via real local API; credentials only in
+  ignored build/reports/qa14/account.private.json, never committed or served.
+- Two live motorcycle route snapshots between NHS Trung Van and CMC campus2;
+  historical14days/ETA/expenses/odometer/events explicitly SIMULATION_ONLY.
+- Dataset:2directions,2schedules,18completed,1skipped,1cancelled,26expenses,
+  1,000,000VND (fuel700k/parking100k/maintenance200k),40inboxevents,2services.
+- Local explicit same-account importer prevents overwrite/repeat/wrong identity;
+  browser local data remains distinct from backend schedule sync.
+- Verification:21API/engine/fixture checks,5target Flutter dataset tests,
+  4NodeVM importer cases;118full Flutter tests,91backend tests passed;
+  analyze clean, web release build passed and served onlocalhost5173.
+- Fixed false fastest-ETA badge for a single saved snapshot; regression passed.
+- Ledger reconciled date-by-date to expenses and completions. Report/data zip
+  build/reports/TrafficGo-QA14-report.zip excludes credentials.
+- Device GPS/real driving/closed-app push/browser manual clicks unverified.
+- See docs/QA14_TEST_PLAN.md. No push/deploy and no existing user data overwritten.

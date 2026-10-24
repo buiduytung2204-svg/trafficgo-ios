@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:trafficgo/app/state.dart';
 import 'package:trafficgo/core/api.dart';
 import 'package:trafficgo/features/map/map_screen.dart';
+import 'package:trafficgo/features/map/route_option.dart';
 import 'package:trafficgo/features/journeys/screens.dart';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
@@ -190,6 +191,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.calls, 0);
       expect(find.text('Trường'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byType(RouteOption),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(DraggableScrollableSheet),
+              matching: find.byType(Scrollable),
+            )
+            .last,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<RouteOption>(find.byType(RouteOption)).fastest,
+        isFalse,
+        reason:
+            'One saved snapshot is not evidence of the fastest available route',
+      );
+      expect(api.calls, 0);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       api.dio.close();

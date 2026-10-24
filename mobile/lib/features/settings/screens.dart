@@ -1,3 +1,5 @@
+import '../../core/design/sheets.dart';
+import '../../core/design/components.dart';
 import '../onboarding/accounts.dart';
 import '../onboarding/screens.dart';
 import '../maintenance/screens.dart';
@@ -20,9 +22,22 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(stateProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Cài đặt')),
+      appBar: AppBar(title: const Text('Cá nhân')),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
         children: [
+          const SectionHeading(
+            title: 'TrafficGo của bạn',
+            subtitle: 'Địa điểm quen, sở thích và nhắc nhở trong một nơi.',
+            icon: Icons.person_outline,
+          ),
+          ListTile(
+            leading: const Icon(Icons.bookmark_outline),
+            title: const Text('Địa điểm và tuyến đã lưu'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/saved'),
+          ),
+
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: Text(
@@ -61,69 +76,76 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: const Text('Lịch đi học, đi làm và lịch sử thông báo'),
             onTap: () => context.push('/schedules'),
           ),
-          ListTile(
-            leading: const Icon(Icons.speed),
-            title: const Text('Chẩn đoán hiệu năng'),
-            subtitle: const Text(
-              'Số liệu cục bộ, không chứa vị trí hoặc token',
-            ),
-            onTap: () => showDialog<void>(
-              context: context,
-              builder: (c) => AlertDialog(
-                title: const Text('Hiệu năng phiên chạy'),
-                content: SizedBox(
-                  width: 600,
-                  child: SingleChildScrollView(
-                    child: SelectableText(PerformanceLog.instance.json),
+          ExpansionTile(
+            leading: const Icon(Icons.developer_mode),
+            title: const Text('Kết nối và chẩn đoán'),
+            subtitle: const Text('Dành cho thiết lập thử nghiệm'),
+            children: [
+              ListTile(
+                leading: const Icon(Icons.speed),
+                title: const Text('Chẩn đoán hiệu năng'),
+                subtitle: const Text(
+                  'Số liệu cục bộ, không chứa vị trí hoặc token',
+                ),
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    title: const Text('Hiệu năng phiên chạy'),
+                    content: SizedBox(
+                      width: 600,
+                      child: SingleChildScrollView(
+                        child: SelectableText(PerformanceLog.instance.json),
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(c),
+                        child: const Text('Đóng'),
+                      ),
+                    ],
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(c),
-                    child: const Text('Đóng'),
-                  ),
-                ],
               ),
-            ),
-          ),
-          const ListTile(
-            title: Text('Kết nối riêng tư'),
-            subtitle: Text(apiBase),
-          ),
-          ListTile(
-            leading: const Icon(Icons.key),
-            title: const Text('Access token backend'),
-            subtitle: Text(
-              state.token.isEmpty
-                  ? 'Chưa thiết lập'
-                  : 'Đã lưu trong bộ nhớ bảo mật',
-            ),
-            onTap: () async {
-              final controller = TextEditingController();
-              final value = await showDialog<String>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Access token'),
-                  content: TextField(
-                    controller: controller,
-                    obscureText: true,
-                    autocorrect: false,
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Hủy'),
-                    ),
-                    FilledButton(
-                      onPressed: () =>
-                          Navigator.pop(context, controller.text.trim()),
-                      child: const Text('Lưu'),
-                    ),
-                  ],
+              const ListTile(
+                title: Text('Kết nối riêng tư'),
+                subtitle: Text(apiBase),
+              ),
+              ListTile(
+                leading: const Icon(Icons.key),
+                title: const Text('Access token backend'),
+                subtitle: Text(
+                  state.token.isEmpty
+                      ? 'Chưa thiết lập'
+                      : 'Đã lưu trong bộ nhớ bảo mật',
                 ),
-              );
-              if (value != null) await state.setToken(value);
-            },
+                onTap: () async {
+                  final controller = TextEditingController();
+                  final value = await showDialog<String>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Access token'),
+                      content: TextField(
+                        controller: controller,
+                        obscureText: true,
+                        autocorrect: false,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Hủy'),
+                        ),
+                        TrafficPrimaryButton(
+                          onPressed: () =>
+                              Navigator.pop(context, controller.text.trim()),
+                          child: const Text('Lưu'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (value != null) await state.setToken(value);
+                },
+              ),
+            ],
           ),
           SwitchListTile(
             title: const Text('Lớp giao thông'),
@@ -157,7 +179,7 @@ class SettingsScreen extends ConsumerWidget {
               'Phương tiện mặc định: ${state.defaultVehicle == 'motorcycle' ? 'Xe máy' : 'Ô tô'}',
             ),
             subtitle: const Text(
-              'Có thể chọn ô tô hoặc xe máy trên bản đồ. ETA Valhalla chưa tính traffic realtime.',
+              'Chọn phương tiện trên bản đồ. Nguồn ETA và trạng thái giao thông hiển thị theo từng tuyến.',
             ),
           ),
           const ListTile(
@@ -184,7 +206,7 @@ class SettingsScreen extends ConsumerWidget {
                       onPressed: () => Navigator.pop(c, false),
                       child: const Text('Hủy'),
                     ),
-                    FilledButton(
+                    TrafficPrimaryButton(
                       onPressed: () => Navigator.pop(c, true),
                       child: const Text('Xóa'),
                     ),
@@ -298,51 +320,56 @@ Future<void> editSavedPlace(
       address = TextEditingController(text: p.address),
       notes = TextEditingController(text: p.notes);
   var category = p.category;
-  final yes = await showDialog<bool>(
-    context: context,
+  String? error;
+  final yes = await showTrafficSheet<bool>(
+    context,
+    title: 'Lưu / sửa địa điểm',
     builder: (c) => StatefulBuilder(
-      builder: (c, set) => AlertDialog(
-        title: const Text('Lưu / sửa địa điểm'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                maxLength: 100,
-                decoration: const InputDecoration(labelText: 'Tên địa điểm'),
-              ),
-              TextField(
-                controller: address,
-                decoration: const InputDecoration(labelText: 'Địa chỉ'),
-              ),
-              DropdownButton<String>(
-                value: category,
-                items: const [
-                  DropdownMenuItem(value: 'home', child: Text('Nhà')),
-                  DropdownMenuItem(value: 'school', child: Text('Trường học')),
-                  DropdownMenuItem(value: 'work', child: Text('Công ty')),
-                  DropdownMenuItem(value: 'favorite', child: Text('Yêu thích')),
-                  DropdownMenuItem(value: 'other', child: Text('Khác')),
-                ],
-                onChanged: (v) => set(() => category = v!),
-              ),
-              TextField(
-                controller: notes,
-                maxLength: 500,
-                decoration: const InputDecoration(labelText: 'Ghi chú'),
-              ),
+      builder: (c, set) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: name,
+            maxLength: 100,
+            decoration: InputDecoration(
+              labelText: 'Tên địa điểm',
+              errorText: error,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: address,
+            decoration: const InputDecoration(labelText: 'Địa chỉ'),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: category,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Phân loại'),
+            items: const [
+              DropdownMenuItem(value: 'home', child: Text('Nhà')),
+              DropdownMenuItem(value: 'school', child: Text('Trường học')),
+              DropdownMenuItem(value: 'work', child: Text('Công ty')),
+              DropdownMenuItem(value: 'favorite', child: Text('Yêu thích')),
+              DropdownMenuItem(value: 'other', child: Text('Khác')),
             ],
+            onChanged: (v) => set(() => category = v!),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Hủy'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: notes,
+            maxLength: 500,
+            decoration: const InputDecoration(labelText: 'Ghi chú'),
           ),
-          FilledButton(
+          const SizedBox(height: 12),
+          TrafficPrimaryButton(
             onPressed: () {
-              if (name.text.trim().isNotEmpty) Navigator.pop(c, true);
+              if (name.text.trim().isEmpty) {
+                set(() => error = 'Nhập tên địa điểm');
+                return;
+              }
+              Navigator.pop(c, true);
             },
             child: const Text('Lưu'),
           ),

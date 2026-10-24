@@ -1,3 +1,5 @@
+import '../../core/design/sheets.dart';
+import '../../core/design/components.dart';
 import '../journeys/store.dart';
 import '../map/map_screen.dart';
 import '../journeys/place_picker.dart';
@@ -91,38 +93,35 @@ class _NextDepartureCardState extends ConsumerState<NextDepartureCard> {
     };
     final next = controller.next;
     final departure = parseInstant(next?.occurrence?['departure_at']);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.alarm),
-              title: Text(next?.name ?? 'Lịch nhắc giờ xuất phát'),
-              subtitle: Text(
-                next == null
-                    ? 'Tạo lịch đi học, đi làm'
-                    : '${next.json['direction'] == 'inbound' ? 'Chiều về' : 'Chiều đi'} • Cần đến ${next.json['arrival_time']}\n${departure == null ? 'Đang chờ ETA' : departureCountdown(departure, DateTime.now())}',
-              ),
-              onTap: () => context.push('/schedules'),
+    return TrafficCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.alarm),
+            title: Text(next?.name ?? 'Lịch nhắc giờ xuất phát'),
+            subtitle: Text(
+              next == null
+                  ? 'Tạo lịch đi học, đi làm'
+                  : '${next.json['direction'] == 'inbound' ? 'Chiều về' : 'Chiều đi'} • Cần đến ${next.json['arrival_time']}\n${departure == null ? 'Đang chờ ETA' : departureCountdown(departure, DateTime.now())}',
             ),
-            if (next != null) ...[
-              Text(
-                'ETA: ${next.occurrence?['eta_s'] == null ? 'Chưa có' : formatEta(next.occurrence!['eta_s'])} • Xuất phát ${vietnamTime(next.occurrence?['departure_at'])}',
-              ),
-              Text(
-                '${controller.online ? 'Đã đồng bộ' : 'Mất kết nối • bản lưu'} • ${controller.workerAlive ? 'Worker hoạt động' : 'Worker chưa kết nối'}',
-              ),
-              TextButton.icon(
-                onPressed: () => openCommuteRoute(context, next.json),
-                icon: const Icon(Icons.navigation),
-                label: const Text('Mở tuyến hành trình tiếp theo'),
-              ),
-            ],
+            onTap: () => context.push('/schedules'),
+          ),
+          if (next != null) ...[
+            Text(
+              'ETA: ${next.occurrence?['eta_s'] == null ? 'Chưa có' : formatEta(next.occurrence!['eta_s'])} • Xuất phát ${vietnamTime(next.occurrence?['departure_at'])}',
+            ),
+            Text(
+              '${controller.online ? 'Đã đồng bộ' : 'Mất kết nối • bản lưu'} • ${controller.workerAlive ? 'Cập nhật tự động đang hoạt động' : 'Cập nhật tự động đang tạm ngưng'}',
+            ),
+            TextButton.icon(
+              onPressed: () => openCommuteRoute(context, next.json),
+              icon: const Icon(Icons.navigation),
+              label: const Text('Mở tuyến hành trình tiếp theo'),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -174,7 +173,7 @@ class SchedulesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: !controller.online
             ? null
-            : () => context.push('/schedule-edit'),
+            : () => showTrafficEditor<void>(context, const ScheduleEditor()),
         icon: const Icon(Icons.add),
         label: const Text('Tạo lịch'),
       ),
@@ -202,9 +201,14 @@ class SchedulesScreen extends ConsumerWidget {
                   ? 'Worker đang hoạt động'
                   : 'Worker chưa chạy hoặc mất heartbeat',
             ),
+            const SectionHeading(
+              title: 'Đúng giờ, bớt vội',
+              subtitle: 'Tách rõ giờ chuẩn bị, giờ xuất phát và giờ cần đến.',
+              icon: Icons.alarm,
+            ),
             if (controller.error != null) Text(controller.error!),
             if (!controller.online)
-              FilledButton.icon(
+              TrafficPrimaryButton.icon(
                 onPressed: controller.busy ? null : controller.connect,
                 icon: const Icon(Icons.link),
                 label: const Text('Kết nối lịch nhắc'),
@@ -354,9 +358,9 @@ class SchedulesScreen extends ConsumerWidget {
                           TextButton(
                             onPressed: !controller.online
                                 ? null
-                                : () => context.push(
-                                    '/schedule-edit',
-                                    extra: schedule,
+                                : () => showTrafficEditor<void>(
+                                    context,
+                                    ScheduleEditor(schedule: schedule),
                                   ),
                             child: const Text('Sửa'),
                           ),
@@ -826,8 +830,8 @@ class _ScheduleEditorState extends ConsumerState<ScheduleEditor> {
               if (oneOff != null)
                 TextButton(
                   onPressed: () async {
-                    final day = await showDatePicker(
-                      context: context,
+                    final day = await pickTrafficDate(
+                      context,
                       initialDate: oneOff!,
                       firstDate: DateTime.now().subtract(
                         const Duration(days: 1),
@@ -884,7 +888,7 @@ class _ScheduleEditorState extends ConsumerState<ScheduleEditor> {
                   error!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-              FilledButton(
+              TrafficPrimaryButton(
                 onPressed: saving ? null : submit,
                 child: Text(saving ? 'Đang lưu…' : 'Lưu và đồng bộ'),
               ),

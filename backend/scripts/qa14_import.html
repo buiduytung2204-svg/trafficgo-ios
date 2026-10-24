@@ -1,0 +1,46 @@
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrafficGo • Nạp dữ liệu QA 14 ngày</title>
+<style>body{font:16px/1.6 system-ui;background:#f5f8f7;color:#162b29;max-width:850px;margin:32px auto;padding:20px}section{background:white;border:1px solid #dae5e1;border-radius:20px;padding:24px;margin:16px 0}button,a{font:inherit}button{background:#007c78;color:white;border:0;border-radius:12px;padding:14px 20px;cursor:pointer}button:disabled{opacity:.5;cursor:default}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #ddd;padding:8px}.scroll{overflow:auto}#status{white-space:pre-wrap}strong{color:#007c78}</style>
+<h1>TrafficGo • Kiểm thử 14 ngày</h1>
+<p><strong>Dữ liệu mô phỏng, không phải 14 ngày GPS hoặc traffic lịch sử.</strong></p>
+<section><h2>Đăng nhập trước khi nạp</h2><ol>
+<li>Mở <a href="/" target="_blank" rel="noopener">TrafficGo</a>, vào Cá nhân → Tạo tài khoản / đăng nhập → Đã có tài khoản? Đăng nhập.</li>
+<li>Dùng tài khoản QA được bàn giao riêng. Giữ nguyên access token backend đang có.</li>
+<li>Đóng các tab TrafficGo khác, quay về trang này rồi nhấn nạp. Không nạp khi bạn đang chỉnh dữ liệu trong app.</li>
+<li>Mở lại app để xem xe, hành trình hai chiều, khoản chi và thống kê. Lịch/thông báo đã nằm ở backend.</li></ol>
+<p id="identity"></p><button id="import" disabled>Nạp dữ liệu mô phỏng vào đúng tài khoản QA</button>
+<p id="status" role="status" aria-live="polite"></p><p><a href="/">Mở TrafficGo sau khi nạp</a> · <a href="qa14-data.json" download>Tải toàn bộ dữ liệu JSON</a></p></section>
+<section><h2>Tổng kết dự kiến</h2><pre id="summary"></pre><p>Ảnh tuyến là snapshot tham khảo lấy hôm nay; dữ liệu hành trình, mua xăng, số km và lịch sử bảo dưỡng dưới đây là giả lập có gắn nhãn QA. Không tự xác nhận đã bảo dưỡng thật.</p></section>
+<section><h2>Nhật ký 14 ngày mô phỏng</h2><div class="scroll"><table><thead><tr><th>Ngày</th><th>Trạng thái</th><th>Chuyến</th><th>Xăng</th><th>Gửi xe</th><th>Bảo dưỡng</th><th>Km nhập tay</th></tr></thead><tbody id="days"></tbody></table></div></section>
+<script>
+let fixture;
+const status=document.querySelector('#status'),button=document.querySelector('#import');
+const money=n=>new Intl.NumberFormat('vi-VN').format(n)+' VNĐ';
+fetch('qa14-data.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Không đọc được fixture');return r.json()}).then(data=>{
+ if(data.simulation_only!==true || !data.user_id.startsWith('account-'))throw Error('Fixture không hợp lệ');
+ fixture=data;document.querySelector('#identity').textContent='Tài khoản bắt buộc: '+data.username;
+ document.querySelector('#summary').textContent=JSON.stringify(data.summary,null,2);
+ for(const row of data.ledger){const tr=document.createElement('tr');for(const value of [row.date,row.status,row.completed_trips,money(row.fuel_vnd),money(row.parking_vnd),money(row.maintenance_vnd),row.odometer_manual_simulated]){const td=document.createElement('td');td.textContent=value;tr.append(td)}document.querySelector('#days').append(tr)}
+ button.disabled=false;
+}).catch(e=>status.textContent=e.message);
+button.onclick=()=>{
+ try{
+  const active=JSON.parse(localStorage.getItem('flutter.active-account-id')||'null');
+  if(active!==fixture.user_id)throw Error('Chưa đăng nhập đúng tài khoản QA. Hãy đăng nhập rồi quay lại; không nạp vào tài khoản khác.');
+  const prefix='flutter.account:'+active+':',marker=prefix+'qa14-imported';
+  if(localStorage.getItem(marker)){status.textContent='Đã nạp trước đó. Không ghi đè các thay đổi bạn đã thử trong app.';return}
+  for(const key of ['saved','trips','journeys.v1','garage.v1']){
+   let current=JSON.parse(localStorage.getItem(prefix+key)||'null');
+   if(typeof current==='string')current=JSON.parse(current);
+   const occupied=Array.isArray(current)?current.length>0:current && Object.values(current).some(v=>Array.isArray(v)&&v.length>0);
+   if(occupied)throw Error('Tài khoản QA đã có dữ liệu cục bộ ở '+key+'. Dừng để tránh ghi đè.');
+  }
+  const writes=Object.entries(fixture.preferences).map(([k,v])=>[prefix+k,JSON.stringify(v)]);
+  const old=writes.map(([k])=>[k,localStorage.getItem(k)]);
+  try{for(const [k,v]of writes)localStorage.setItem(k,v);localStorage.setItem(marker,JSON.stringify(fixture.date_until))}
+  catch(e){for(const [k,v]of old){if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}throw e}
+  status.textContent='Nạp xong cho '+fixture.username+'. Mở lại TrafficGo; dữ liệu này là MÔ PHỎNG. Không có token hoặc mật khẩu nào được thay đổi.';
+  button.disabled=true;
+ }catch(e){status.textContent=e.message}
+};
+</script></html>

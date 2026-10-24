@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -164,11 +165,21 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Chi phí 7 ngày gần nhất'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsNWidgets(7));
-      expect(find.text('250000 đ'), findsOneWidget);
-      expect(find.text('100000 đ'), findsWidgets);
-      expect(find.text('350000 đ'), findsOneWidget);
+      expect(find.text('Chi phí 7 ngày'), findsOneWidget);
+      final chart = tester.widget<BarChart>(find.byType(BarChart));
+      expect(chart.data.barGroups.length, 7);
+      expect(
+        chart.data.barGroups.fold<double>(
+          0,
+          (sum, g) => sum + g.barRods.single.toY,
+        ),
+        350,
+      );
+      expect(find.text('250.000 VNĐ'), findsOneWidget);
+      expect(find.text('100.000 VNĐ'), findsWidgets);
+      // The same amount legitimately appears in the week/month summary and
+      // journey breakdown; the chart above verifies the actual 7-day total.
+      expect(find.text('350.000 VNĐ'), findsWidgets);
       expect(find.text('Di hoc'), findsOneWidget);
       expect(
         find.textContaining('Chuyến đã xác nhận hoàn thành: 0'),

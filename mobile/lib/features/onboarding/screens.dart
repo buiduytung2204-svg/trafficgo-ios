@@ -1,8 +1,13 @@
+import '../../core/design/components.dart';
 import '../map/camera_session.dart';
+
 import 'package:go_router/go_router.dart';
+
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../app/state.dart';
 import '../../core/models.dart';
 import '../departure/controller.dart';
@@ -30,16 +35,23 @@ class AccountScreen extends ConsumerStatefulWidget {
 
 class _AccountScreenState extends ConsumerState<AccountScreen> {
   final username = TextEditingController(), password = TextEditingController();
+  final nickname = TextEditingController();
   bool register = true, busy = false;
   String? error;
   @override
   void dispose() {
+    nickname.dispose();
     username.dispose();
     password.dispose();
     super.dispose();
   }
 
   Future<void> submit() async {
+    if (register &&
+        (nickname.text.trim().isEmpty || nickname.text.trim().length > 100)) {
+      setState(() => error = 'Vui lòng nhập nickname từ 1 đến 100 ký tự.');
+      return;
+    }
     if (!RegExp(r'^[a-zA-Z0-9_.-]{3,40}$').hasMatch(username.text.trim()) ||
         password.text.length < 10 ||
         password.text.length > 128) {
@@ -56,7 +68,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     try {
       await ref
           .read(accountProvider)
-          .authenticate(username.text, password.text, register: register);
+          .authenticate(
+            username.text,
+            password.text,
+            register: register,
+            nickname: nickname.text,
+          );
       password.clear();
       await reloadPersonalData(ref);
       if (mounted) {
@@ -80,7 +97,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             Text(
-              c.account?['profile']?['display_name'] ??
+              c.account?['profile']?['nickname'] ??
+                  c.account?['profile']?['display_name'] ??
                   c.account?['username'] ??
                   'Tài khoản',
             ),
@@ -93,7 +111,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             const Text(
               'Lịch nhắc được lưu trên backend Windows. Xe, tuyến đã chọn và chi phí được lưu theo tài khoản trên thiết bị này; chưa đồng bộ các dữ liệu đó giữa thiết bị.',
             ),
-            FilledButton(
+            TrafficPrimaryButton(
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const PersonalSetupScreen()),
@@ -130,6 +148,21 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 'Hồ sơ riêng cho xe, hành trình và lịch đi lại của bạn.',
               ),
               const SizedBox(height: 20),
+              if (register) ...[
+                TextField(
+                  controller: nickname,
+                  enabled: !busy,
+                  maxLength: 100,
+                  textCapitalization: TextCapitalization.words,
+                  autofillHints: const [AutofillHints.nickname],
+                  decoration: const InputDecoration(
+                    labelText: 'Nickname',
+                    helperText:
+                        'Tên TrafficGo dùng để gọi bạn và hiển thị trên hồ sơ.',
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               TextField(
                 controller: username,
                 autocorrect: false,
@@ -157,7 +190,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   error!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-              FilledButton(
+              TrafficPrimaryButton(
                 onPressed: busy ? null : submit,
                 child: Text(
                   busy
@@ -217,6 +250,10 @@ class _PersonalSetupScreenState extends ConsumerState<PersonalSetupScreen> {
   @override
   void initState() {
     super.initState();
+    name.text =
+        ref.read(accountProvider).account?['profile']?['nickname'] ??
+        ref.read(accountProvider).account?['profile']?['display_name'] ??
+        '';
     draftKey = '${accountPrefix(ref.read(preferencesProvider))}setup-draft.v1';
     try {
       final raw = ref.read(preferencesProvider).getString(draftKey);
@@ -460,8 +497,7 @@ class _PersonalSetupScreenState extends ConsumerState<PersonalSetupScreen> {
         p.origin.point != start.point ||
         p.destination.point != end.point) {
       setState(
-        () => error =
-            'Giữ đúng địa điểm và phương tiện đã chọn, hoặc quay lại bước trước để thay đổi.',
+        () => error = 'Giữ đúng địa điểm và phương tiện đã chọn, hoặc quay lại bước trước để thay đổi.',
       );
       return;
     }
@@ -527,9 +563,16 @@ class _PersonalSetupScreenState extends ConsumerState<PersonalSetupScreen> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                Text(
-                  'Bước ${step + 1}/5 · ${labels[step]}',
-                  style: Theme.of(context).textTheme.titleLarge,
+                SectionHeading(
+                  title: 'Bước ${step + 1}/5 · ${labels[step]}',
+                  subtitle: 'Lưu riêng cho tài khoản của bạn',
+                  icon: [
+                    Icons.person_outline,
+                    Icons.two_wheeler,
+                    Icons.place_outlined,
+                    Icons.route,
+                    Icons.alarm,
+                  ][step],
                 ),
                 LinearProgressIndicator(value: (step + 1) / 5),
                 const SizedBox(height: 24),
@@ -652,7 +695,7 @@ class _PersonalSetupScreenState extends ConsumerState<PersonalSetupScreen> {
                 ],
                 if (step == 3) ...[
                   Text('${home?.name ?? ""} → ${destination?.name ?? ""}'),
-                  FilledButton.tonal(
+                  TrafficPrimaryButton.tonal(
                     onPressed: home != null && destination != null
                         ? plan
                         : null,
@@ -769,7 +812,7 @@ class _PersonalSetupScreenState extends ConsumerState<PersonalSetupScreen> {
                               },
                         child: const Text('Quay lại'),
                       ),
-                    FilledButton(
+                    TrafficPrimaryButton(
                       onPressed: busy ? null : next,
                       child: Text(
                         busy

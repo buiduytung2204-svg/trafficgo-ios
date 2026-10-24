@@ -1,3 +1,6 @@
+import '../core/design/components.dart';
+import '../core/design/traffic_theme.dart';
+import 'home_shell.dart';
 import '../features/onboarding/accounts.dart';
 import '../features/onboarding/screens.dart';
 import 'package:flutter/material.dart';
@@ -51,37 +54,16 @@ class TrafficGoApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(stateProvider);
-    ThemeData theme(Brightness brightness) => ThemeData(
-      useMaterial3: true,
-      brightness: brightness,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xff007c78),
-        brightness: brightness,
-      ),
-      scaffoldBackgroundColor: brightness == Brightness.light
-          ? const Color(0xfff6f8fa)
-          : const Color(0xff11191f),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(18)),
-        ),
-      ),
-      cardTheme: const CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(24)),
-        ),
-      ),
-    );
     return MaterialApp.router(
       title: 'TrafficGo',
       debugShowCheckedModeBanner: false,
       locale: const Locale('vi'),
       supportedLocales: const [Locale('vi'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: theme(Brightness.light),
-      darkTheme: theme(Brightness.dark),
+      theme: TrafficTokens.material(Brightness.light),
+      darkTheme: TrafficTokens.material(Brightness.dark),
       themeMode: state.theme,
+      builder: (context, child) => TrafficDesignScope(child: child!),
       routerConfig: router,
     );
   }
@@ -151,11 +133,13 @@ class _HomeGateState extends ConsumerState<HomeGate> {
               );
             }
             if (!account.complete) return const PersonalSetupScreen();
-            return MapScreen(key: ValueKey('account:${account.id}'));
+            return TrafficHomeShell(key: ValueKey('account:${account.id}'));
           },
         );
       }
-      if (state.onboarded) return const MapScreen(key: ValueKey('guest'));
+      if (state.onboarded) {
+        return const TrafficHomeShell(key: ValueKey('guest'));
+      }
       return Scaffold(
         body: SafeArea(
           child: Padding(
@@ -190,7 +174,7 @@ class _HomeGateState extends ConsumerState<HomeGate> {
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
-                        child: FilledButton(
+                        child: TrafficPrimaryButton(
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(

@@ -1,8 +1,10 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../app/state.dart';
 import '../../core/api.dart';
 
@@ -77,10 +79,15 @@ class AccountController extends ChangeNotifier {
     String username,
     String password, {
     required bool register,
+    String? nickname,
   }) async {
     final r = await dio.post(
       '/api/v1/accounts/${register ? 'register' : 'login'}',
-      data: {'username': username.trim(), 'password': password},
+      data: {
+        'username': username.trim(),
+        'password': password,
+        if (register) 'nickname': nickname?.trim(),
+      },
       options: await auth(session: false),
     );
     final data = Map<String, dynamic>.from(r.data);

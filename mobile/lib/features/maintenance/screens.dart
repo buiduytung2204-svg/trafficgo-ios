@@ -1,3 +1,5 @@
+import '../../core/design/sheets.dart';
+import '../../core/design/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -53,6 +55,11 @@ class GarageScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
+          const SectionHeading(
+            title: 'Chăm xe, an tâm mỗi ngày',
+            subtitle: 'Công-tơ-mét thực tế và mốc bảo dưỡng của bạn.',
+            icon: Icons.two_wheeler,
+          ),
           const Text(
             'Nhắc trong ứng dụng khi mở màn hình. Chưa gửi push bảo dưỡng khi app đóng. Số km do bạn cập nhật từ công-tơ-mét; không cộng từ tuyến dự kiến.',
           ),
@@ -64,11 +71,11 @@ class GarageScreen extends ConsumerWidget {
               child: const Text('Không đọc được danh mục. Thử lại'),
             ),
           if (garage.vehicles.isEmpty)
-            const ListTile(
-              title: Text('Chưa có xe'),
-              subtitle: Text(
-                'Thêm Honda Wave, Vision, Future, LEAD, SH hoặc SH mode (2020–2026).',
-              ),
+            const EmptyPanel(
+              icon: Icons.two_wheeler,
+              title: 'Chưa có xe',
+              message:
+                  'Thêm Honda Wave, Vision, Future, LEAD, SH hoặc SH mode (2020–2026).',
             ),
           for (final v in garage.vehicles)
             Card(
@@ -186,7 +193,7 @@ class GarageScreen extends ConsumerWidget {
                                     onPressed: () => Navigator.pop(c, false),
                                     child: const Text('Hủy'),
                                   ),
-                                  FilledButton(
+                                  TrafficPrimaryButton(
                                     onPressed: () => Navigator.pop(c, true),
                                     child: const Text('Đã thực hiện'),
                                   ),
@@ -391,7 +398,7 @@ class _VehicleEditorState extends ConsumerState<VehicleEditor> {
             ),
           ),
           if (error != null) Text(error!),
-          FilledButton(
+          TrafficPrimaryButton(
             onPressed: busy
                 ? null
                 : () async {
@@ -482,8 +489,8 @@ class _MaintenanceEditorState extends ConsumerState<MaintenanceEditor> {
                 : due!.toIso8601String().split('T').first,
           ),
           onTap: () async {
-            final d = await showDatePicker(
-              context: context,
+            final d = await pickTrafficDate(
+              context,
               initialDate: due ?? DateTime.now(),
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),
@@ -511,7 +518,7 @@ class _MaintenanceEditorState extends ConsumerState<MaintenanceEditor> {
           ),
         ),
         if (error != null) Text(error!),
-        FilledButton(
+        TrafficPrimaryButton(
           onPressed: busy
               ? null
               : () async {
@@ -619,8 +626,8 @@ class _VerifiedOilEditorState extends ConsumerState<VerifiedOilEditor> {
                   : lastDate!.toIso8601String().split('T').first,
             ),
             onTap: () async {
-              final d = await showDatePicker(
-                context: context,
+              final d = await pickTrafficDate(
+                context,
                 initialDate: lastDate ?? DateTime.now(),
                 firstDate: DateTime(2000),
                 lastDate: DateTime.now(),
@@ -640,7 +647,7 @@ class _VerifiedOilEditorState extends ConsumerState<VerifiedOilEditor> {
             'Không tự xác nhận sách dùng chung cho bản Sport/tiêu chuẩn. Nếu không chắc mã xe, dùng mốc tự nhập và hỏi HEAD.',
           ),
           if (error != null) Text(error!),
-          FilledButton(
+          TrafficPrimaryButton(
             onPressed: busy || !confirmed
                 ? null
                 : () async {

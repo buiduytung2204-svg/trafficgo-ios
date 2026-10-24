@@ -245,6 +245,13 @@ void main() {
         child: const MaterialApp(home: SettingsScreen()),
       ),
     );
+    await tester.scrollUntilVisible(
+      find.text('Lớp giao thông'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.byType(Switch).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(Switch).first);
     await tester.pump();
     expect(prefs.getBool('traffic'), false);
@@ -326,7 +333,7 @@ void main() {
     await tester.tap(find.text('Xe máy'));
     await tester.pump();
     expect(
-      find.textContaining('ETA chưa tính traffic realtime.'),
+      find.textContaining('Tuân thủ biển báo và đường cấm xe máy thực tế.'),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);

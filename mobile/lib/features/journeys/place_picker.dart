@@ -1,3 +1,4 @@
+import '../../core/design/components.dart';
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -214,7 +215,7 @@ class _PlacePickerState extends ConsumerState<PlacePicker> {
           const Text('Powered by Geoapify • © OpenStreetMap contributors'),
           if (chosen != null)
             SafeArea(
-              child: FilledButton(
+              child: TrafficPrimaryButton(
                 onPressed: () => Navigator.pop(context, chosen),
                 child: Text('Chọn ${chosen!.name}'),
               ),

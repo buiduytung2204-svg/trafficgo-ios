@@ -1,3 +1,6 @@
+import 'route_option.dart';
+import '../../core/design/sheets.dart';
+import '../../core/design/components.dart';
 import '../maintenance/screens.dart';
 import '../journeys/screens.dart';
 import '../journeys/store.dart';
@@ -223,7 +226,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             onPressed: () => Navigator.pop(c, false),
             child: const Text('Đóng'),
           ),
-          FilledButton(
+          TrafficPrimaryButton(
             onPressed: () => Navigator.pop(c, true),
             child: const Text('Mở cài đặt'),
           ),
@@ -469,7 +472,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             onPressed: () => Navigator.pop(c, false),
             child: const Text('Chỉ dừng dẫn đường'),
           ),
-          FilledButton(
+          TrafficPrimaryButton(
             onPressed: () => Navigator.pop(c, true),
             child: const Text('Đã hoàn thành'),
           ),
@@ -562,15 +565,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ) ||
               !navigating)) {
         lastSuggestion = DateTime.now();
-        final accept = await showDialog<bool>(
-          context: context,
-          builder: (c) => AlertDialog(
-            title: const Text('So sánh tuyến đề xuất'),
-            content: Text(
-              'Tuyến đề xuất: ${formatEta(answer.first.seconds)}. Tiết kiệm ước tính ${formatEta(math.max(0, remaining - answer.first.seconds))}. So sánh theo ETA routing, chưa có traffic realtime. Chỉ thao tác khi đã dừng ở nơi an toàn.',
-            ),
-            actions: [
-              TextButton(
+        final accept = await showTrafficSheet<bool>(
+          context,
+          title: 'So sánh tuyến đề xuất',
+          builder: (c) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Tuyến đề xuất: ${formatEta(answer.first.seconds)}. Tiết kiệm ước tính ${formatEta(math.max(0, remaining - answer.first.seconds))}. ${answer.first.trafficAware ? 'ETA có xét giao thông.' : 'ETA chưa xét giao thông trực tiếp.'} Chỉ thao tác khi đã dừng ở nơi an toàn.',
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
                 onPressed: () => Navigator.push(
                   c,
                   MaterialPageRoute(
@@ -585,15 +591,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     ),
                   ),
                 ),
-                child: const Text('Xem trên bản đồ'),
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Xem trên bản đồ'),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(c, false),
-                child: const Text('Giữ tuyến'),
-              ),
-              FilledButton(
+              const SizedBox(height: 12),
+              TrafficButton(
+                label: 'Xác nhận chuyển tuyến',
                 onPressed: () => Navigator.pop(c, true),
-                child: const Text('Xác nhận chuyển tuyến'),
+              ),
+              const SizedBox(height: 8),
+              TrafficButton(
+                label: 'Giữ tuyến',
+                secondary: true,
+                onPressed: () => Navigator.pop(c, false),
               ),
             ],
           ),
@@ -798,7 +808,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     if (i != selected)
                       Polyline(
                         points: routes[i].points,
-                        color: color.primary.withValues(alpha: .3),
+                        color: color.outline.withValues(alpha: .65),
                         strokeWidth: 5,
                       ),
                   if (current != null)
@@ -843,231 +853,268 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
             ],
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!baseMap.usesTomTom)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Wrap(
-                        children: [
-                          if (baseMap.name == 'geoapify')
-                            TextButton(
-                              onPressed: () => launchUrl(
-                                Uri.parse('https://www.geoapify.com/'),
-                              ),
-                              child: const Text(
-                                'Powered by Geoapify',
-                                style: TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          if (baseMap.name == 'stadia_dev')
-                            TextButton(
-                              onPressed: () => launchUrl(
-                                Uri.parse('https://stadiamaps.com/'),
-                              ),
-                              child: const Text(
-                                '© Stadia Maps',
-                                style: TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          if (baseMap.name == 'stadia_dev')
-                            TextButton(
-                              onPressed: () => launchUrl(
-                                Uri.parse('https://openmaptiles.org/'),
-                              ),
-                              child: const Text(
-                                '© OpenMapTiles',
-                                style: TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          TextButton(
-                            onPressed: () => launchUrl(
-                              Uri.parse(
-                                'https://www.openstreetmap.org/copyright',
-                              ),
-                            ),
-                            child: Text(
-                              baseMap.name == 'stadia_dev' ||
-                                      baseMap.name == 'geoapify'
-                                  ? '© OpenStreetMap contributors'
-                                  : baseMap.attribution,
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  Row(
-                    children: [
-                      const Icon(Icons.explore, color: Color(0xff007c78)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'TrafficGo',
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      PopupMenuButton<String>(
-                        tooltip: 'Hành trình và chi phí',
-                        icon: const Icon(Icons.apps),
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(
-                            value: 'route',
-                            child: Text('Tìm tuyến giữa hai địa điểm'),
-                          ),
-                          PopupMenuItem(
-                            value: 'journeys',
-                            child: Text('Hành trình đi học / đi làm'),
-                          ),
-                          PopupMenuItem(
-                            value: 'garage',
-                            child: Text('Xe và bảo dưỡng'),
-                          ),
-                          PopupMenuItem(
-                            value: 'cost',
-                            child: Text('Chi phí và thống kê'),
-                          ),
-                        ],
-                        onSelected: (value) async {
-                          if (value == 'route') {
-                            final trip = await Navigator.push<SavedTrip>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const RoutePlanner(),
-                              ),
-                            );
-                            if (trip != null && context.mounted) {
-                              ref.read(stateProvider).saveTrip(trip);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MapScreen(plannedTrip: trip),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * .55,
+              ),
+              child: SingleChildScrollView(
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!baseMap.usesTomTom)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Wrap(
+                              children: [
+                                if (baseMap.name == 'geoapify')
+                                  TextButton(
+                                    onPressed: () => launchUrl(
+                                      Uri.parse('https://www.geoapify.com/'),
+                                    ),
+                                    child: const Text(
+                                      'Powered by Geoapify',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                if (baseMap.name == 'stadia_dev')
+                                  TextButton(
+                                    onPressed: () => launchUrl(
+                                      Uri.parse('https://stadiamaps.com/'),
+                                    ),
+                                    child: const Text(
+                                      '© Stadia Maps',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                if (baseMap.name == 'stadia_dev')
+                                  TextButton(
+                                    onPressed: () => launchUrl(
+                                      Uri.parse('https://openmaptiles.org/'),
+                                    ),
+                                    child: const Text(
+                                      '© OpenMapTiles',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                TextButton(
+                                  onPressed: () => launchUrl(
+                                    Uri.parse(
+                                      'https://www.openstreetmap.org/copyright',
+                                    ),
+                                  ),
+                                  child: Text(
+                                    baseMap.name == 'stadia_dev' ||
+                                            baseMap.name == 'geoapify'
+                                        ? '© OpenStreetMap contributors'
+                                        : baseMap.attribution,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
                                 ),
-                              );
-                            }
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => value == 'journeys'
-                                    ? const JourneysScreen()
-                                    : value == 'garage'
-                                    ? const GarageScreen()
-                                    : const ExpensesScreen(),
+                              ],
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            const Icon(Icons.explore, color: Color(0xff007c78)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'TrafficGo',
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w800),
                               ),
-                            );
-                          }
-                        },
-                      ),
-                      iconButton(
-                        Icons.bookmark_outline,
-                        'Địa điểm đã lưu',
-                        () async {
-                          final p = await context.push<Place>('/saved');
-                          if (p != null && mounted) choose(p);
-                        },
-                      ),
-                      iconButton(
-                        Icons.tune_rounded,
-                        'Cài đặt',
-                        () => context.push('/settings'),
-                      ),
-                    ],
+                            ),
+                            PopupMenuButton<String>(
+                              tooltip: 'Hành trình và chi phí',
+                              icon: const Icon(Icons.apps),
+                              itemBuilder: (_) => const [
+                                PopupMenuItem(
+                                  value: 'route',
+                                  child: Text('Tìm tuyến giữa hai địa điểm'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'journeys',
+                                  child: Text('Hành trình đi học / đi làm'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'garage',
+                                  child: Text('Xe và bảo dưỡng'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'cost',
+                                  child: Text('Chi phí và thống kê'),
+                                ),
+                              ],
+                              onSelected: (value) async {
+                                if (value == 'route') {
+                                  final trip = await Navigator.push<SavedTrip>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RoutePlanner(),
+                                    ),
+                                  );
+                                  if (trip != null && context.mounted) {
+                                    ref.read(stateProvider).saveTrip(trip);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            MapScreen(plannedTrip: trip),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => value == 'journeys'
+                                          ? const JourneysScreen()
+                                          : value == 'garage'
+                                          ? const GarageScreen()
+                                          : const ExpensesScreen(),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                            iconButton(
+                              Icons.bookmark_outline,
+                              'Địa điểm đã lưu',
+                              () async {
+                                final p = await context.push<Place>('/saved');
+                                if (p != null && mounted) choose(p);
+                              },
+                            ),
+                            iconButton(
+                              Icons.tune_rounded,
+                              'Cài đặt',
+                              () => context.push('/settings'),
+                            ),
+                          ],
+                        ),
+                        if (!navigating)
+                          Material(
+                            elevation: 3,
+                            borderRadius: BorderRadius.circular(20),
+                            child: TextField(
+                              controller: query,
+                              onChanged: search,
+                              decoration: InputDecoration(
+                                hintText: 'Bạn muốn đi đâu ở Hà Nội?',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: IconButton(
+                                  tooltip: 'Xóa tìm kiếm',
+                                  onPressed: () {
+                                    query.clear();
+                                    search('');
+                                  },
+                                  icon: const Icon(Icons.close),
+                                ),
+                                filled: true,
+                                fillColor: color.surface,
+                              ),
+                            ),
+                          ),
+                        if (query.text.isEmpty &&
+                            destination == null &&
+                            state.saved.isNotEmpty)
+                          SizedBox(
+                            height: 52,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: state.saved.length,
+                              separatorBuilder: (_, index) =>
+                                  const SizedBox(width: 8),
+                              itemBuilder: (c, index) => ActionChip(
+                                avatar: const Icon(
+                                  Icons.bookmark_outline,
+                                  size: 18,
+                                ),
+                                label: Text(state.saved[index].name),
+                                onPressed: () => choose(state.saved[index]),
+                              ),
+                            ),
+                          ),
+                        if (searching)
+                          const LinearProgressIndicator(
+                            semanticsLabel: 'Đang tìm địa điểm',
+                          ),
+                        if (results.isNotEmpty)
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 260),
+                            child: Card(
+                              child: ListView(
+                                shrinkWrap: true,
+                                children: results
+                                    .map(
+                                      (p) => ListTile(
+                                        leading: const Icon(
+                                          Icons.place_outlined,
+                                        ),
+                                        title: Text(p.name),
+                                        onTap: () => choose(p),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ),
+                          ),
+                        if (results.any((p) => p.provider == 'geoapify'))
+                          searchCredit(results),
+                        if (query.text.isEmpty &&
+                            state.historyEnabled &&
+                            destination == null &&
+                            state.history.isNotEmpty)
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.history),
+                              title: Text(state.history.first),
+                              onTap: () {
+                                query.text = state.history.first;
+                                search(query.text);
+                              },
+                            ),
+                          ),
+                        if (state.token.isEmpty)
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.key),
+                              title: const Text(
+                                'Kết nối backend để mở bản đồ thật',
+                              ),
+                              subtitle: const Text(
+                                'Thiết lập access token trong Cài đặt.',
+                              ),
+                              onTap: () => context.push('/settings'),
+                            ),
+                          ),
+                        if (error != null || tileError != null)
+                          Card(
+                            color: color.errorContainer,
+                            child: ListTile(
+                              title: Text(error ?? tileError!),
+                              trailing: IconButton(
+                                tooltip: 'Đóng thông báo',
+                                icon: const Icon(Icons.close),
+                                onPressed: () => setState(() {
+                                  error = null;
+                                  tileError = null;
+                                }),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                  if (!navigating)
-                    Material(
-                      elevation: 3,
-                      borderRadius: BorderRadius.circular(20),
-                      child: TextField(
-                        controller: query,
-                        onChanged: search,
-                        decoration: InputDecoration(
-                          hintText: 'Bạn muốn đi đâu ở Hà Nội?',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: IconButton(
-                            tooltip: 'Xóa tìm kiếm',
-                            onPressed: () {
-                              query.clear();
-                              search('');
-                            },
-                            icon: const Icon(Icons.close),
-                          ),
-                          filled: true,
-                          fillColor: color.surface,
-                        ),
-                      ),
-                    ),
-                  if (searching)
-                    const LinearProgressIndicator(
-                      semanticsLabel: 'Đang tìm địa điểm',
-                    ),
-                  if (results.isNotEmpty)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 260),
-                      child: Card(
-                        child: ListView(
-                          shrinkWrap: true,
-                          children: results
-                              .map(
-                                (p) => ListTile(
-                                  leading: const Icon(Icons.place_outlined),
-                                  title: Text(p.name),
-                                  onTap: () => choose(p),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                    ),
-                  if (results.any((p) => p.provider == 'geoapify'))
-                    searchCredit(results),
-                  if (query.text.isEmpty &&
-                      state.historyEnabled &&
-                      destination == null &&
-                      state.history.isNotEmpty)
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.history),
-                        title: Text(state.history.first),
-                        onTap: () {
-                          query.text = state.history.first;
-                          search(query.text);
-                        },
-                      ),
-                    ),
-                  if (state.token.isEmpty)
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.key),
-                        title: const Text('Kết nối backend để mở bản đồ thật'),
-                        subtitle: const Text(
-                          'Thiết lập access token trong Cài đặt.',
-                        ),
-                        onTap: () => context.push('/settings'),
-                      ),
-                    ),
-                  if (error != null || tileError != null)
-                    Card(
-                      color: color.errorContainer,
-                      child: ListTile(
-                        title: Text(error ?? tileError!),
-                        trailing: IconButton(
-                          tooltip: 'Đóng thông báo',
-                          icon: const Icon(Icons.close),
-                          onPressed: () => setState(() {
-                            error = null;
-                            tileError = null;
-                          }),
-                        ),
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
           ),
@@ -1106,7 +1153,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
           DraggableScrollableSheet(
             initialChildSize: destination == null ? 0.22 : 0.38,
             minChildSize: .16,
-            maxChildSize: .65,
+            maxChildSize: .85,
+            snap: true,
+            snapSizes: const [.16, .38, .85],
             builder: (context, scroll) => Container(
               decoration: BoxDecoration(
                 color: color.surface,
@@ -1156,33 +1205,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         IconButton(
                           tooltip: 'Lưu địa điểm',
                           onPressed: () async {
-                            final controller = TextEditingController(
-                              text: destination!.name,
-                            );
-                            final name = await showDialog<String>(
-                              context: context,
-                              builder: (c) => AlertDialog(
-                                title: const Text('Lưu địa điểm'),
-                                content: TextField(
-                                  controller: controller,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Nhà, Trường học, Công ty...',
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(c),
-                                    child: const Text('Hủy'),
-                                  ),
-                                  FilledButton(
-                                    onPressed: () => Navigator.pop(
-                                      c,
-                                      controller.text.trim(),
-                                    ),
-                                    child: const Text('Lưu'),
-                                  ),
-                                ],
-                              ),
+                            final name = await editText(
+                              context,
+                              'Lưu địa điểm',
+                              initial: destination!.name,
                             );
                             if (name != null && name.isNotEmpty) {
                               state.save(
@@ -1204,7 +1230,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     const Text(
                       'Tìm địa điểm hoặc nhấn giữ trên bản đồ để chọn điểm đến.',
                     ),
-                  if (!navigating) const NextDepartureCard(),
+                  if (!navigating && ref.watch(departureProvider).next != null)
+                    const NextDepartureCard(),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -1239,7 +1266,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                   if (vehicle == 'motorcycle')
                     const Text(
-                      'ETA chưa tính traffic realtime. Tuân thủ biển báo giao thông thực tế.',
+                      'Tuân thủ biển báo và đường cấm xe máy thực tế. Nguồn ETA hiển thị theo từng tuyến.',
                     ),
                   if (loading)
                     const Padding(
@@ -1278,26 +1305,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         label: const Text('Lưu tuyến thường dùng'),
                       ),
                     for (var i = 0; i < routes.length; i++)
-                      Card(
-                        color: selected == i
-                            ? color.primaryContainer
-                            : color.surfaceContainerLow,
-                        child: ListTile(
-                          onTap: navigating
-                              ? null
-                              : () => setState(() => selected = i),
-                          leading: Icon(
-                            i == selected
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_off,
-                          ),
-                          title: Text(
-                            '${formatEta(routes[i].seconds)} • ${(routes[i].meters / 1000).toStringAsFixed(1)} km',
-                          ),
-                          subtitle: Text(
-                            '${i == 0 ? 'Nhanh nhất theo ETA • ' : ''}Chậm do traffic: ${routes[i].delay == null ? 'không có dữ liệu' : formatEta(routes[i].delay!)}',
-                          ),
-                        ),
+                      RouteOption(
+                        route: routes[i],
+                        selected: selected == i,
+                        fastest: routes.length > 1 && i == 0,
+                        onTap: navigating
+                            ? null
+                            : () => setState(() => selected = i),
                       ),
                     Text(
                       '${current!.provider} • ${current!.trafficAware ? 'ETA có xét traffic' : 'ETA KHÔNG có traffic realtime'}${current!.provider == 'tomtom' && vehicle == 'motorcycle' ? ' • Xe máy beta: kiểm tra biển báo và đường cấm' : ''} • ETA tham khảo cập nhật ${current!.retrievedAt.toLocal().toString().substring(0, 16)}${current!.fallbackReason == null ? '' : ' • dùng provider dự phòng'}',
@@ -1329,18 +1343,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               : 'Cập nhật / Tính lại tuyến',
                         ),
                       ),
-                      FilledButton(
+                      TrafficPrimaryButton(
                         onPressed: finishJourney,
                         child: const Text('Kết thúc hành trình'),
                       ),
                     ] else
-                      FilledButton.icon(
+                      TrafficPrimaryButton.icon(
                         onPressed: start,
                         icon: const Icon(Icons.navigation),
                         label: const Text('Bắt đầu hành trình'),
                       ),
                   ] else if (destination != null)
-                    FilledButton.icon(
+                    TrafficPrimaryButton.icon(
                       onPressed: loading ? null : calculate,
                       icon: const Icon(Icons.route),
                       label: Text(

@@ -43,3 +43,7 @@ trong **Xe và bảo dưỡng**. Xem [nguồn tài liệu và phạm vi xác min
 Chưa tự điền chu kỳ theo hãng hoặc gửi push bảo dưỡng khi ứng dụng đóng.
 
 Hồ sơ cá nhân, tài khoản và thiết lập xe/lịch lần đầu: [docs/PERSONALIZATION.md](docs/PERSONALIZATION.md).
+
+## Giao diện thống nhất
+
+Xem [UI/UX redesign](docs/UI_REDESIGN.md): theme xanh ngọc light/dark, 4 tab giữ trạng thái bản đồ, Forui primary actions, calendar Shadcn, Wolt forms và FL Chart từ chi phí thật. Flutter/CI vẫn dùng 3.47.7.

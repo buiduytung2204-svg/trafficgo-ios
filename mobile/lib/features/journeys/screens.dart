@@ -1,3 +1,6 @@
+import '../../core/design/components.dart';
+import '../../core/design/sheets.dart';
+import 'expense_chart.dart';
 import '../../app/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,33 +60,62 @@ class JourneysScreen extends ConsumerWidget {
         label: const Text('Thêm hành trình'),
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 100),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
         children: [
+          const SectionHeading(
+            title: 'Đi lại theo cách của bạn',
+            subtitle:
+                'Tuyến đã chọn, hai chiều độc lập và lịch nhắc hằng ngày.',
+            icon: Icons.route,
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.alarm, size: 18),
+                label: const Text('Lịch nhắc'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SchedulesScreen()),
+                ),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.receipt_long, size: 18),
+                label: const Text('Chi phí'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExpensesScreen()),
+                ),
+              ),
+            ],
+          ),
           const NextDepartureCard(),
           if (store.loadError != null) Text(store.loadError!),
           if (store.journeys.isEmpty)
-            const ListTile(
-              title: Text('Chưa có hành trình'),
-              subtitle: Text(
-                'Tạo hành trình và chọn riêng tuyến chiều đi, chiều về.',
-              ),
+            const EmptyPanel(
+              icon: Icons.route,
+              title: 'Chưa có hành trình',
+              message: 'Tạo hành trình và chọn riêng tuyến chiều đi, chiều về.',
             ),
           for (final j in store.journeys)
-            ListTile(
-              leading: Icon(
-                j.category == 'school'
-                    ? Icons.school
-                    : j.category == 'work'
-                    ? Icons.work
-                    : Icons.route,
-              ),
-              title: Text(j.name),
-              subtitle: Text(
-                '${j.enabled ? 'Đang hoạt động' : 'Tạm dừng'} • ${j.outbound == null ? 'Chưa có chiều đi' : 'Có chiều đi'} • ${j.inbound == null ? 'Chưa có chiều về' : 'Có chiều về'}',
-              ),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => JourneyDetail(id: j.id)),
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  j.category == 'school'
+                      ? Icons.school
+                      : j.category == 'work'
+                      ? Icons.work
+                      : Icons.route,
+                ),
+                title: Text(j.name),
+                subtitle: Text(
+                  '${j.enabled ? 'Đang hoạt động' : 'Tạm dừng'} • ${j.outbound == null ? 'Chưa có chiều đi' : 'Có chiều đi'} • ${j.inbound == null ? 'Chưa có chiều về' : 'Có chiều về'}',
+                ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => JourneyDetail(id: j.id)),
+                ),
               ),
             ),
         ],
@@ -98,19 +130,23 @@ Future<String?> editText(
   String initial = '',
 }) async {
   final c = TextEditingController(text: initial);
-  final result = await showDialog<String>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(title),
-      content: TextField(controller: c, maxLength: 100, autofocus: true),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Hủy'),
+  final result = await showTrafficSheet<String>(
+    context,
+    title: title,
+    builder: (ctx) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          controller: c,
+          maxLength: 100,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Tên hiển thị'),
         ),
-        FilledButton(
+        const SizedBox(height: 16),
+        TrafficButton(
+          label: 'Lưu',
           onPressed: () => Navigator.pop(ctx, c.text.trim()),
-          child: const Text('Lưu'),
         ),
       ],
     ),
@@ -236,7 +272,7 @@ class JourneyDetail extends ConsumerWidget {
                             Text(
                               '${formatEta(trip.route!.seconds)} • ${(trip.route!.meters / 1000).toStringAsFixed(1)} km\nETA tham khảo lúc ${trip.route!.retrievedAt.toLocal()}\n${trip.route!.trafficAware ? 'ETA có traffic' : 'ETA routing, không có traffic realtime'}',
                             ),
-                          FilledButton.icon(
+                          TrafficPrimaryButton.icon(
                             onPressed: j.enabled
                                 ? () => Navigator.push(
                                     context,
@@ -497,6 +533,11 @@ class _RoutePlannerState extends ConsumerState<RoutePlanner> {
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        const SectionHeading(
+          title: 'Bạn muốn đi đâu?',
+          subtitle: 'Chọn điểm đi, điểm đến rồi so sánh các tuyến thực tế.',
+          icon: Icons.alt_route,
+        ),
         for (final isOrigin in [true, false])
           ListTile(
             leading: Icon(isOrigin ? Icons.trip_origin : Icons.place),
@@ -552,7 +593,7 @@ class _RoutePlannerState extends ConsumerState<RoutePlanner> {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         if (busy) const LinearProgressIndicator(),
-        FilledButton(
+        TrafficPrimaryButton(
           onPressed: busy || origin == null || destination == null
               ? null
               : calculate,
@@ -584,7 +625,7 @@ class _RoutePlannerState extends ConsumerState<RoutePlanner> {
             ),
             child: const Text('Xem tuyến đã chọn trên bản đồ'),
           ),
-          FilledButton(
+          TrafficPrimaryButton(
             onPressed: busy ? null : () => Navigator.pop(context, trip),
             child: const Text('Lưu chính xác tuyến đã chọn'),
           ),
@@ -601,14 +642,12 @@ Future<void> editExpense(
   String? journeyId,
   String? direction,
 }) async {
-  await Navigator.push(
+  await showTrafficEditor<void>(
     context,
-    MaterialPageRoute(
-      builder: (_) => ExpenseEditor(
-        existing: existing,
-        journeyId: journeyId,
-        direction: direction,
-      ),
+    ExpenseEditor(
+      existing: existing,
+      journeyId: journeyId,
+      direction: direction,
     ),
   );
 }
@@ -685,8 +724,8 @@ class _ExpenseEditorState extends ConsumerState<ExpenseEditor> {
           ListTile(
             title: Text('Ngày: ${date.toIso8601String().split('T').first}'),
             onTap: () async {
-              final d = await showDatePicker(
-                context: context,
+              final d = await pickTrafficDate(
+                context,
                 initialDate: date,
                 firstDate: DateTime(2000),
                 lastDate: DateTime.now().add(const Duration(days: 1)),
@@ -735,7 +774,7 @@ class _ExpenseEditorState extends ConsumerState<ExpenseEditor> {
             decoration: const InputDecoration(labelText: 'Ghi chú'),
           ),
           if (error != null) Text(error!),
-          FilledButton(
+          TrafficPrimaryButton(
             onPressed: busy
                 ? null
                 : () async {
@@ -798,35 +837,37 @@ class ExpensesScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
-          Text(
-            'Hôm nay: ${s.total(today, tomorrow)} đ\nTuần này: ${s.total(week, tomorrow)} đ\nTháng này: ${s.total(month, tomorrow)} đ',
-            style: Theme.of(context).textTheme.titleLarge,
+          const SectionHeading(
+            title: 'Chi tiêu rõ ràng hơn',
+            subtitle: 'Chỉ tổng hợp khoản chi bạn đã ghi nhận.',
+            icon: Icons.account_balance_wallet_outlined,
+          ),
+          MetricPanel(
+            title: 'Hôm nay',
+            value: formatVnd(s.total(today, tomorrow)),
+            icon: Icons.today,
+          ),
+          MetricPanel(
+            title: 'Tuần này',
+            value: formatVnd(s.total(week, tomorrow)),
+            icon: Icons.date_range,
+          ),
+          MetricPanel(
+            title: 'Tháng này',
+            value: formatVnd(s.total(month, tomorrow)),
+            icon: Icons.calendar_month,
           ),
           Text(
             'Chuyến đã xác nhận hoàn thành: ${s.completed.length}\nChi phí trung bình/chuyến (toàn bộ khoản chi): ${s.completed.isEmpty ? 'Chưa có chuyến' : '${(total / s.completed.length).round()} đ'}',
           ),
           const Divider(),
-          const Text('Chi phí 7 ngày gần nhất'),
-          for (var i = 6; i >= 0; i--)
-            Builder(
-              builder: (_) {
-                final d = today.subtract(Duration(days: i));
-                final n = s.total(d, d.add(const Duration(days: 1)));
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${d.day}/${d.month}: $n đ'),
-                    LinearProgressIndicator(value: total == 0 ? 0 : n / total),
-                  ],
-                );
-              },
-            ),
+          ExpenseWeekChart(store: s, today: today),
           const Divider(),
           const Text('Theo loại (toàn bộ thời gian)'),
           for (final e in totals.entries)
             ListTile(
               title: Text(expenseTypes[e.key] ?? e.key),
-              trailing: Text('${e.value} đ'),
+              trailing: Text(formatVnd(e.value)),
             ),
           const Text('Theo hành trình (toàn bộ thời gian)'),
           for (final id in s.expenses.map((e) => e.journeyId).toSet())
@@ -836,7 +877,11 @@ class ExpensesScreen extends ConsumerWidget {
                     (id == null ? 'Không gắn hành trình' : 'Hành trình đã xóa'),
               ),
               trailing: Text(
-                '${s.expenses.where((e) => e.journeyId == id).fold<int>(0, (v, e) => v + e.amount)} đ',
+                formatVnd(
+                  s.expenses
+                      .where((e) => e.journeyId == id)
+                      .fold<int>(0, (v, e) => v + e.amount),
+                ),
               ),
             ),
           const Divider(),
@@ -849,7 +894,9 @@ class ExpensesScreen extends ConsumerWidget {
             ...s.expenses,
           ]..sort((a, b) => b.date.compareTo(a.date)))
             ListTile(
-              title: Text('${expenseTypes[e.category]} • ${e.amount} đ'),
+              title: Text(
+                '${expenseTypes[e.category]} • ${formatVnd(e.amount)}',
+              ),
               subtitle: Text('${e.date} • ${e.notes}'),
               onTap: () => editExpense(context, ref, existing: e),
               trailing: IconButton(

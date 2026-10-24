@@ -44,6 +44,17 @@ class Credentials(BaseModel):
     password: str = Field(min_length=10, max_length=128, repr=False)
 
 
+class Registration(Credentials):
+    nickname: str = Field(min_length=1, max_length=100)
+
+    @model_validator(mode='before')
+    @classmethod
+    def trim_nickname(cls, values):
+        if isinstance(values, dict) and isinstance(values.get('nickname'), str):
+            values = {**values, 'nickname': values['nickname'].strip()}
+        return values
+
+
 class PlaceInput(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=100)
@@ -114,11 +125,11 @@ def create_router(access, db):
         return {**info(account), 'token':token}
 
     @router.post('/register', status_code=201, dependencies=[Depends(throttle)])
-    def register(body: Credentials, session=Depends(transaction_db)):
+    def register(body: Registration, session=Depends(transaction_db)):
         username = body.username.lower()
         password_hash = hash_password(body.password)
         account = Account(user_id='account-'+secrets.token_hex(16), username=username,
-                          password_hash=password_hash, profile={'setup_complete':False})
+                          password_hash=password_hash, profile={'setup_complete':False, 'nickname':body.nickname, 'display_name':body.nickname})
         try:
             session.add(User(id=account.user_id));session.flush();session.add(account);session.flush()
             return issue(session, account)
@@ -154,7 +165,7 @@ def create_router(access, db):
         else:
             row.data = body.schedule.model_dump(mode='json');row.revision += 1
         materialize(session, row, datetime.now(timezone.utc))
-        account.profile = {**body.model_dump(mode='json', exclude={'schedule'}),
+        account.profile = {**profile, **body.model_dump(mode='json', exclude={'schedule'}),
                            'setup_complete':True, 'schedule_id':row.id}
         session.commit()
         return info(account)
