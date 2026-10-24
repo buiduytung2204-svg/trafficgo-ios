@@ -1,14 +1,15 @@
 import hashlib
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta, time
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy import select, delete, text
 from sqlalchemy.orm import Session
 from app.database import User, SavedRouteRow
 from .models import Schedule, Occurrence, NotificationEvent, Installation, DeviceToken, WorkerState
-from .schemas import ScheduleInput, OccurrenceAction, DeviceInput
-from .service import materialize
-from .engine import candidate_arrivals
+from .schemas import ScheduleInput, OccurrenceAction, DeviceInput, DayException, NotificationAction
+from .service import materialize, snapshot, recalculate
+from .notifications import NotificationService
+from .engine import candidate_arrivals, local, ZONE
 
 
 def digest(value):
@@ -46,6 +47,8 @@ def create_router(access, db):
                     datetime.fromisoformat(o.data['arrival_at']) > now]
         current = upcoming[0] if upcoming else (occurrences[-1] if occurrences else None)
         return {'id': row.id, 'revision': row.revision, **row.data,
+                'day_exceptions': [serialize_occurrence(o) for o in occurrences
+                    if o.status == 'skipped' or o.data.get('day_override')][-14:],
                 'occurrence': serialize_occurrence(current) if current else None}
 
     @router.post('/session', status_code=201)
@@ -100,11 +103,15 @@ def create_router(access, db):
         row.data = body.model_dump(mode='json')
         row.revision += 1
         # Cancel occurrences no longer in the recurrence. Never touch terminal trips.
-        valid_dates = {d.date().isoformat() for d in candidate_arrivals(row.data, datetime.now(timezone.utc))}
         for item in session.scalars(select(Occurrence).where(Occurrence.schedule_id == row.id,
                                                             Occurrence.status == 'planned')):
-            if item.arrival_date not in valid_dates:
+            # A saved exception may be farther away than the worker's 7-day window.
+            matches = (item.arrival_date == row.data['one_off_date'] if row.data.get('one_off_date')
+                       else date.fromisoformat(item.arrival_date).weekday() in row.data['weekdays'])
+            if not matches:
                 item.status = 'cancelled'
+            # Old notification payloads must not start an edited route or old time.
+            cancel_reminders(session, item)
         materialize(session, row, datetime.now(timezone.utc))
         session.commit()
         return serialize_schedule(session, row)
@@ -131,11 +138,113 @@ def create_router(access, db):
             raise HTTPException(404, 'Không tìm thấy chuyến')
         owned(session, Schedule, occurrence.schedule_id, owner)
         session.refresh(occurrence, with_for_update=True)
-        if occurrence.status != 'planned' and occurrence.status != body.status:
+        if occurrence.status not in ('planned', 'in_progress') and occurrence.status != body.status:
             raise HTTPException(409, 'Chuyến đã kết thúc, không thể thay đổi')
         occurrence.status = body.status
+        cancel_reminders(session, occurrence)
         session.commit()
         return serialize_occurrence(occurrence)
+
+    def cancel_reminders(session, occurrence):
+        data = dict(occurrence.data)
+        data.pop('snooze_until', None)
+        data.pop('snooze_source', None)
+        occurrence.data = data
+        for event in session.scalars(select(NotificationEvent).where(
+                NotificationEvent.occurrence_id == occurrence.id)):
+            event.data = {**event.data, 'cancelled': True}
+
+    @router.put('/schedules/{schedule_id}/exceptions/{day}')
+    def day_exception(schedule_id: str, day: date, body: DayException,
+                      owner=Depends(identity), session: Session = Depends(transaction_db)):
+        schedule = owned(session, Schedule, schedule_id, owner)
+        now = local(datetime.now(timezone.utc))
+        if day < now.date() or day > now.date() + timedelta(days=366):
+            raise HTTPException(422, 'Chọn ngày từ hôm nay đến một năm tới')
+        if (schedule.data.get('one_off_date') and schedule.data['one_off_date'] != day.isoformat()) or (
+                not schedule.data.get('one_off_date') and day.weekday() not in schedule.data['weekdays']):
+            raise HTTPException(422, 'Ngày này không thuộc lịch lặp')
+        occurrence = session.scalar(select(Occurrence).where(Occurrence.schedule_id == schedule.id,
+            Occurrence.arrival_date == day.isoformat()).with_for_update())
+        if occurrence and occurrence.status != 'planned':
+            if body.action == 'skip' and occurrence.status == 'skipped':
+                return serialize_occurrence(occurrence)
+            if not (body.action == 'reset' and occurrence.status == 'skipped'):
+                raise HTTPException(409, 'Chuyến đã bắt đầu hoặc kết thúc')
+        arrival = datetime.combine(day, time.fromisoformat(schedule.data['arrival_time']), ZONE)
+        if not occurrence:
+            occurrence = Occurrence(schedule_id=schedule.id, arrival_date=day.isoformat(),
+                data=snapshot(schedule.data, arrival, schedule.revision))
+            session.add(occurrence)
+            session.flush()
+        data = dict(occurrence.data)
+        override = {} if body.action == 'reset' else {
+            **data.get('day_override', {}), **body.model_dump(exclude={'action'}, exclude_none=True)}
+        if (body.action != 'skip' and occurrence.status == 'planned'
+                and override == data.get('day_override', {}) and not data.get('snooze_until')):
+            session.commit()
+            return serialize_occurrence(occurrence)
+        arrival = datetime.combine(day, time.fromisoformat(override.get('arrival_time', schedule.data['arrival_time'])), ZONE)
+        if body.action != 'skip' and arrival <= now:
+            raise HTTPException(409, 'Giờ cần đến đã qua; chọn giờ khác')
+        cancel_reminders(session, occurrence)
+        data.update(day_override=override, arrival_at=arrival.isoformat(),
+                    exception_revision=data.get('exception_revision', 0) + 1)
+        data.pop('snooze_until', None)
+        data.pop('snooze_source', None)
+        recalculate(data, schedule.data)
+        occurrence.data = data
+        occurrence.status = 'skipped' if body.action == 'skip' else 'planned'
+        session.commit()
+        return serialize_occurrence(occurrence)
+
+    def event_info(row):
+        return {'id': row.id, 'occurrence_id': row.occurrence_id,
+                'kind': row.kind, 'created_at': row.created_at, 'read': row.read, **row.data}
+
+    @router.get('/notifications/{event_id}')
+    def get_event(event_id: str, owner=Depends(identity), session: Session = Depends(transaction_db)):
+        return event_info(owned(session, NotificationEvent, event_id, owner))
+
+    @router.post('/notifications/{event_id}/action')
+    def notification_action(event_id: str, body: NotificationAction,
+                            owner=Depends(identity), session: Session = Depends(transaction_db)):
+        event = session.get(NotificationEvent, event_id)
+        if not event or event.user_id != owner:
+            raise HTTPException(404, 'Không tìm thấy thông báo')
+        occurrence = session.get(Occurrence, event.occurrence_id)
+        schedule = owned(session, Schedule, occurrence.schedule_id, owner)
+        session.refresh(occurrence, with_for_update=True)
+        session.refresh(event, with_for_update=True)
+        previous = event.data.get('action_result')
+        if previous:
+            expected = {'start': 'in_progress', 'skip': 'skipped', 'snooze': 'planned'}
+            if previous != body.action or occurrence.status != expected[previous]:
+                raise HTTPException(409, 'Thông báo này đã được xử lý')
+            return event_info(event)
+        now = local(datetime.now(timezone.utc))
+        if datetime.fromisoformat(event.created_at) > now:
+            raise HTTPException(409, 'Chưa đến giờ nhắc lại')
+        if occurrence.status != 'planned' or event.data.get('cancelled') or not schedule.data['enabled']:
+            raise HTTPException(409, 'Chuyến không còn chờ xuất phát')
+        if datetime.fromisoformat(occurrence.data['arrival_at']) <= now:
+            raise HTTPException(409, 'Thông báo đã hết hạn')
+        if body.action == 'snooze':
+            until = now + timedelta(minutes=5)
+            if until >= datetime.fromisoformat(occurrence.data['arrival_at']):
+                raise HTTPException(409, 'Không còn đủ thời gian nhắc lại sau 5 phút')
+            occurrence.data = {**occurrence.data, 'snooze_until': until.isoformat(), 'snooze_source': event.id}
+            reminder_kind = 'snooze_' + hashlib.sha256(event.id.encode()).hexdigest()[:16]
+            reminder = NotificationService().emit(session, schedule, occurrence, reminder_kind, until)
+            reminder.data = {**reminder.data, 'scheduled_for': until.isoformat()}
+            event.data = {**event.data, 'reminder_event_id': reminder.id}
+        else:
+            occurrence.status = 'in_progress' if body.action == 'start' else 'skipped'
+            cancel_reminders(session, occurrence)
+        event.read = True
+        event.data = {**event.data, 'action_result': body.action, 'action_at': now.isoformat()}
+        session.commit()
+        return event_info(event)
 
     @router.patch('/notifications/{event_id}/read')
     def read(event_id: str, owner=Depends(identity), session: Session = Depends(transaction_db)):

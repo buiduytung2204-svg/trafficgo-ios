@@ -1,7 +1,10 @@
 import 'package:trafficgo/core/design/traffic_theme.dart';
+import 'package:trafficgo/app/home_shell.dart';
 import 'package:flutter/services.dart';
+
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +20,7 @@ import 'package:trafficgo/features/departure/screens.dart';
 import 'package:trafficgo/features/maintenance/screens.dart';
 import 'package:trafficgo/features/maintenance/store.dart';
 import 'package:trafficgo/features/onboarding/screens.dart';
+
 import 'personalization_cases_test.dart' as fixtures;
 
 void main() {
@@ -29,6 +33,17 @@ void main() {
       ),
     );
     if (const bool.fromEnvironment('CAPTURE_UI')) {
+      for (final name in [
+        'Regular',
+        'Medium',
+        'SemiBold',
+        'Bold',
+        'ExtraBold',
+      ]) {
+        await (FontLoader('BeVietnamPro')
+              ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-$name.ttf')))
+            .load();
+      }
       await (FontLoader(
         'MaterialIcons',
       )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
@@ -42,6 +57,7 @@ void main() {
     }
   });
   final screens = <String, Widget Function()>{
+    'home_overview': () => const TrafficHomeShell(),
     'settings': () => const SettingsScreen(),
     'saved_places_routes': () => const SavedScreen(),
     'journeys': () => const JourneysScreen(),
@@ -156,9 +172,8 @@ void main() {
                   large ? Brightness.dark : Brightness.light,
                 ),
                 builder: (context, child) => MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: TextScaler.linear(large ? 2 : 1)),
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.linear(large ? 2 : 1)),
                   child: TrafficDesignScope(
                     child: RepaintBoundary(
                       key: fixtures.boundary,

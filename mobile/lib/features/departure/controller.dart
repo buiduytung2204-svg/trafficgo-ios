@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/legacy.dart';
+
 import '../../app/state.dart';
 import '../../core/api.dart';
 import 'models.dart';
@@ -21,8 +23,11 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
   List<CommuteSchedule> schedules = [];
   List<Map<String, dynamic>> events = [];
   Map<String, dynamic> worker = {};
+  Map<String, dynamic>? pendingNotification;
+  final Set<String> notificationActions = {};
   String credential = '';
   String? error;
+  String? notificationWarning;
   bool online = false, busy = false, disposed = false, foreground = true;
   DateTime? syncedAt;
   Timer? poll;
@@ -36,6 +41,11 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
         prefix: accountPrefix(prefs),
       ) {
     prefix = accountPrefix(prefs);
+    localNotifications.onResponse = (intent) {
+      if (disposed) return;
+      pendingNotification = intent;
+      changed();
+    };
     try {
       final cached = prefs.getString(cacheKey);
       if (cached != null) accept(Map<String, dynamic>.from(jsonDecode(cached)));
@@ -59,9 +69,8 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
           (s) =>
               s.enabled &&
               s.occurrence?['status'] == 'planned' &&
-              parseInstant(
-                    s.occurrence?['arrival_at'],
-                  )?.isAfter(DateTime.now()) ==
+              parseInstant(s.occurrence?['arrival_at'])
+                      ?.isAfter(DateTime.now()) ==
                   true,
         )
         .toList();
@@ -161,8 +170,7 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
       }
     } catch (_) {
       online = false;
-      error =
-          'Mất kết nối hoặc phiên không hợp lệ. Dữ liệu đang xem là bản lưu, chưa đồng bộ.';
+      error = 'Mất kết nối hoặc phiên không hợp lệ. Dữ liệu đang xem là bản lưu, chưa đồng bộ.';
     } finally {
       busy = false;
       changed();
@@ -183,6 +191,48 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
       options: Options(method: method, headers: auth.headers),
     );
     await refresh();
+  }
+
+  Future<Map<String, dynamic>> notificationEvent(String id) async {
+    await ready;
+    final response = await dio.get(
+      '/api/v1/departure/notifications/$id',
+      options: auth,
+    );
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> notificationAction(
+    String id,
+    String action,
+  ) async {
+    await ready;
+    if (!notificationActions.add(id)) throw StateError('Đang xử lý thông báo.');
+    changed();
+    try {
+      final response = await dio.post(
+        '/api/v1/departure/notifications/$id/action',
+        data: {'action': action},
+        options: auth,
+      );
+      final event = Map<String, dynamic>.from(response.data);
+      if (disposed) return event;
+      notificationWarning = null;
+      if (event['reminder_event_id'] case final String reminderId) {
+        try {
+          final reminder = await notificationEvent(reminderId);
+          final scheduled = await localNotifications.scheduleReminder(reminder);
+          if (!scheduled) notificationWarning = 'Đã lưu trên backend; thông báo thiết bị chưa được bật hoặc nền tảng chưa hỗ trợ.';
+        } catch (_) {
+          notificationWarning = 'Đã lưu trên backend nhưng chưa hẹn được thông báo trên thiết bị.';
+        }
+      }
+      await refresh();
+      return event;
+    } finally {
+      notificationActions.remove(id);
+      changed();
+    }
   }
 
   Future<void> save(Map<String, dynamic> data, [String? id]) => mutate(

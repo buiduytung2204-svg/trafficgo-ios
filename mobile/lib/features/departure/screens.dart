@@ -1,18 +1,26 @@
+import 'day_exception.dart';
 import '../../core/design/sheets.dart';
 import '../../core/design/components.dart';
 import '../journeys/store.dart';
 import '../map/map_screen.dart';
 import '../journeys/place_picker.dart';
+
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../app/state.dart';
 import '../../core/models.dart';
 import 'controller.dart';
 import 'models.dart';
 
-void openCommuteRoute(BuildContext context, Map<String, dynamic> data) {
+void openCommuteRoute(
+  BuildContext context,
+  Map<String, dynamic> data, {
+  bool startNavigation = false,
+}) {
   final store = ProviderScope.containerOf(
     context,
     listen: false,
@@ -33,6 +41,7 @@ void openCommuteRoute(BuildContext context, Map<String, dynamic> data) {
       context,
       MaterialPageRoute(
         builder: (_) => MapScreen(
+          autoStartNavigation: startNavigation,
           plannedTrip: trip,
           plannedVehicle: trip.vehicle,
           journeyId: journey!.id,
@@ -59,6 +68,10 @@ void openCommuteRoute(BuildContext context, Map<String, dynamic> data) {
         }),
       ),
       'vehicle': data['vehicle'] ?? 'car',
+      'journey_id': data['journey_id'],
+      'direction': data['direction'],
+      'occurrence_id': data['occurrence']?['id'],
+      'start_navigation': startNavigation,
     },
   );
 }
@@ -75,7 +88,7 @@ class _NextDepartureCardState extends ConsumerState<NextDepartureCard> {
   void initState() {
     super.initState();
     ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
+      if (mounted && TickerMode.valuesOf(context).enabled) setState(() {});
     });
   }
 
@@ -93,35 +106,129 @@ class _NextDepartureCardState extends ConsumerState<NextDepartureCard> {
     };
     final next = controller.next;
     final departure = parseInstant(next?.occurrence?['departure_at']);
-    return TrafficCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    if (next == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.alarm),
-            title: Text(next?.name ?? 'Lịch nhắc giờ xuất phát'),
-            subtitle: Text(
-              next == null
-                  ? 'Tạo lịch đi học, đi làm'
-                  : '${next.json['direction'] == 'inbound' ? 'Chiều về' : 'Chiều đi'} • Cần đến ${next.json['arrival_time']}\n${departure == null ? 'Đang chờ ETA' : departureCountdown(departure, DateTime.now())}',
-            ),
-            onTap: () => context.push('/schedules'),
+          const EmptyPanel(
+            icon: Icons.alarm_add_rounded,
+            title: 'Lịch nhắc giờ xuất phát',
+            message: 'Thêm giờ đến. TrafficGo tính giờ chuẩn bị và xuất phát cho bạn.',
           ),
-          if (next != null) ...[
-            Text(
-              'ETA: ${next.occurrence?['eta_s'] == null ? 'Chưa có' : formatEta(next.occurrence!['eta_s'])} • Xuất phát ${vietnamTime(next.occurrence?['departure_at'])}',
+          TextButton.icon(
+            onPressed: () => context.push('/schedules'),
+            icon: const Icon(Icons.add_alarm),
+            label: const Text('Tạo lịch nhắc đầu tiên'),
+          ),
+        ],
+      );
+    }
+    final journey = ref
+        .watch(journeysProvider)
+        .journeys
+        .where((j) => j.id == next.json['journey_id'])
+        .firstOrNull;
+    final purpose = journey?.category == 'school'
+        ? 'Đi học'
+        : journey?.category == 'work'
+        ? 'Đi làm'
+        : 'Chuyến tiếp theo';
+    final colors = Theme.of(context).colorScheme;
+    final eta = next.occurrence?['eta_s'];
+    return TrafficEntrance(
+      child: TrafficCard(
+        color: colors.primaryContainer.withValues(alpha: .58),
+        accent: colors.primary,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              children: [
+                Chip(
+                  avatar: Icon(
+                    journey?.category == 'school'
+                        ? Icons.school_rounded
+                        : Icons.route_rounded,
+                    size: 18,
+                  ),
+                  label: Text(purpose),
+                ),
+                Text(
+                  next.json['direction'] == 'inbound' ? 'Chiều về' : 'Chiều đi',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
             Text(
-              '${controller.online ? 'Đã đồng bộ' : 'Mất kết nối • bản lưu'} • ${controller.workerAlive ? 'Cập nhật tự động đang hoạt động' : 'Cập nhật tự động đang tạm ngưng'}',
+              next.json['destination_name']?.toString().isNotEmpty == true
+                  ? next.json['destination_name']
+                  : next.name,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            TextButton.icon(
+            const SizedBox(height: 20),
+            const Text('Xuất phát lúc'),
+            Text(
+              departure == null
+                  ? 'Đang chờ ETA'
+                  : vietnamTime(next.occurrence?['departure_at'])
+                        .split(' ')
+                        .last,
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1.5,
+                color: colors.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              departure == null
+                  ? 'Chưa có thời gian xuất phát'
+                  : departureCountdown(departure, DateTime.now()),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                Text('Cần đến ${vietnamTime(next.occurrence?['arrival_at'])}'),
+                Text('ETA: ${eta == null ? 'Chưa có' : formatEta(eta)}'),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TrafficPrimaryButton.icon(
               onPressed: () => openCommuteRoute(context, next.json),
-              icon: const Icon(Icons.navigation),
+              icon: const Icon(Icons.navigation_rounded),
               label: const Text('Mở tuyến hành trình tiếp theo'),
             ),
+            const SizedBox(height: 8),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(
+                controller.online ? 'Đã đồng bộ' : 'Mất kết nối • bản lưu',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              children: [
+                Text(
+                  controller.workerAlive
+                      ? 'Cập nhật tự động đang hoạt động'
+                      : 'Cập nhật tự động đang tạm ngưng',
+                ),
+                if (next.occurrence?['traffic_aware'] != true)
+                  const Text('ETA chưa xét giao thông trực tiếp.'),
+                TextButton(
+                  onPressed: () => context.push('/schedules'),
+                  child: const Text('Quản lý lịch nhắc'),
+                ),
+              ],
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -189,7 +296,7 @@ class SchedulesScreen extends ConsumerWidget {
                   : 'Chưa kết nối • chỉ xem bản lưu',
               style: TextStyle(
                 color: controller.online
-                    ? Colors.teal
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.error,
               ),
             ),
@@ -264,7 +371,41 @@ class SchedulesScreen extends ConsumerWidget {
                             ? 'Một lần: ${schedule.json['one_off_date']}'
                             : 'Lặp: ${(schedule.json['weekdays'] as List).map((d) => ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][d]).join(', ')}',
                       ),
+                      if ((schedule.json['day_exceptions'] as List? ?? [])
+                          .isNotEmpty)
+                        ExpansionTile(
+                          title: const Text('Ngoại lệ đã lưu'),
+                          children: [
+                            for (final exception
+                                in schedule.json['day_exceptions'])
+                              ListTile(
+                                dense: true,
+                                title: Text(
+                                  '${exception['arrival_date']} • ${statusLabel(exception['status'])}',
+                                ),
+                                subtitle: Text(
+                                  'Giờ cần đến: ${vietnamTime(exception['arrival_at'])}',
+                                ),
+                              ),
+                          ],
+                        ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.event_note),
+                        label: const Text('Nghỉ / đổi giờ một ngày'),
+                        onPressed: !controller.online
+                            ? null
+                            : () => showTrafficSheet(
+                                context,
+                                title: 'Ngoại lệ lịch lặp',
+                                builder: (_) =>
+                                    DayExceptionEditor(schedule: schedule),
+                              ),
+                      ),
                       if (schedule.occurrence case final occurrence?) ...[
+                        Text('Ngày chuyến: ${occurrence['arrival_date']}'),
+                        if ((occurrence['day_override'] as Map?)?.isNotEmpty ==
+                            true)
+                          const Text('Có thay đổi riêng cho ngày này'),
                         Text(
                           'ETA: ${occurrence['eta_s'] == null ? 'Chưa có' : '${((occurrence['eta_s'] as num) / 60).ceil()} phút'}'
                           ' • ${occurrence['eta_source'] == 'initial_estimate' ? 'Ước tính bạn nhập' : occurrence['eta_source'] ?? 'Chờ routing'}',
@@ -292,7 +433,8 @@ class SchedulesScreen extends ConsumerWidget {
                           const Text(
                             'Routing lỗi; giữ ETA cũ, có thể đã lỗi thời.',
                           ),
-                        if (occurrence['status'] == 'planned')
+                        if (occurrence['status'] == 'planned' ||
+                            occurrence['status'] == 'in_progress')
                           Wrap(
                             children: [
                               TextButton(
@@ -466,6 +608,7 @@ class SchedulesScreen extends ConsumerWidget {
 String statusLabel(dynamic status) =>
     const {
       'planned': 'Sắp diễn ra',
+      'in_progress': 'Đang di chuyển',
       'completed': 'Đã hoàn thành',
       'skipped': 'Đã bỏ qua',
       'cancelled': 'Đã hủy',
@@ -497,36 +640,82 @@ class DepartureNotificationsScreen extends ConsumerWidget {
               ),
             for (final event in controller.events)
               Card(
-                child: ListTile(
-                  leading: Icon(
-                    event['read'] == true
-                        ? Icons.drafts_outlined
-                        : Icons.markunread_outlined,
-                  ),
-                  title: Text(event['title']),
-                  subtitle: Text(
-                    '${event['schedule_name']}\n${vietnamTime(event['created_at'])}',
-                  ),
-                  isThreeLine: true,
-                  onTap: () async {
-                    if (controller.online) {
-                      try {
-                        await controller.mutate(
-                          'PATCH',
-                          'notifications/${event['id']}/read',
-                        );
-                      } catch (_) {
-                        /* Stay unread on failure. */
-                      }
-                    }
-                    if (context.mounted) {
-                      openCommuteRoute(context, {
-                        ...Map<String, dynamic>.from(event['route']),
-                        'name': event['schedule_name'],
-                      });
-                    }
-                  },
-                  trailing: const Icon(Icons.route),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: Icon(
+                        event['read'] == true
+                            ? Icons.drafts_outlined
+                            : Icons.markunread_outlined,
+                      ),
+                      title: Text(event['title']),
+                      subtitle: Text(
+                        "${event['schedule_name']}\n${vietnamTime(event['created_at'])}${event['arrival_date'] == null ? '' : ' • Chuyến ${event['arrival_date']}'}",
+                      ),
+                      isThreeLine: true,
+                      onTap: () async {
+                        if (controller.online) {
+                          try {
+                            await controller.mutate(
+                              'PATCH',
+                              'notifications/${event['id']}/read',
+                            );
+                          } catch (_) {
+                            /* Stay unread on failure. */
+                          }
+                        }
+                        if (context.mounted) {
+                          openCommuteRoute(context, {
+                            ...Map<String, dynamic>.from(event['route']),
+                            'name': event['schedule_name'],
+                            'occurrence': {'id': event['occurrence_id']},
+                          });
+                        }
+                      },
+                      trailing: const Icon(Icons.route),
+                    ),
+                    if (event['cancelled'] != true &&
+                        event['action_result'] == null &&
+                        (parseInstant(event['scheduled_for'])
+                                ?.isAfter(DateTime.now()) !=
+                            true))
+                      Wrap(
+                        children: [
+                          for (final entry in const {
+                            'start': 'Xuất phát',
+                            'snooze': 'Nhắc lại sau 5 phút',
+                            'skip': 'Bỏ qua hôm nay',
+                          }.entries)
+                            TextButton(
+                              onPressed:
+                                  !controller.online ||
+                                      controller.notificationActions.contains(
+                                        event['id'],
+                                      )
+                                  ? null
+                                  : () => handleDepartureNotification(
+                                      context,
+                                      controller,
+                                      event['id'],
+                                      entry.key,
+                                    ),
+                              child: Text(entry.value),
+                            ),
+                        ],
+                      ),
+                    if (event['action_result'] != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          const {
+                                'start': 'Đã xuất phát',
+                                'skip': 'Đã bỏ qua ngày này',
+                                'snooze': 'Đã hẹn nhắc lại sau 5 phút',
+                              }[event['action_result']] ??
+                              'Đã xử lý',
+                        ),
+                      ),
+                  ],
                 ),
               ),
           ],
@@ -897,5 +1086,67 @@ class _ScheduleEditorState extends ConsumerState<ScheduleEditor> {
         ),
       ),
     );
+  }
+}
+
+Future<void> handleDepartureNotification(
+  BuildContext context,
+  DepartureController controller,
+  String eventId,
+  String actionId,
+) async {
+  try {
+    final event = actionId == 'open'
+        ? await controller.notificationEvent(eventId)
+        : await controller.notificationAction(eventId, actionId);
+    if (!context.mounted || controller.disposed) return;
+    if (actionId == 'open' || actionId == 'start') {
+      openCommuteRoute(context, {
+        ...Map<String, dynamic>.from(event['route']),
+        'name': event['schedule_name'],
+        'occurrence': {'id': event['occurrence_id']},
+      }, startNavigation: actionId == 'start');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            actionId == 'snooze'
+                ? (controller.notificationWarning ??
+                      'Đã hẹn nhắc lại sau 5 phút; giờ xuất phát không thay đổi.')
+                : 'Đã bỏ qua ngày của chuyến này.',
+          ),
+        ),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(departureError(e))));
+    }
+  }
+}
+
+/// Bind once above all home tabs; notification taps survive tab changes and cold start.
+class DepartureNotificationBridge extends ConsumerWidget {
+  final Widget child;
+  const DepartureNotificationBridge({super.key, required this.child});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(departureProvider);
+    final intent = controller.pendingNotification;
+    if (intent != null) {
+      controller.pendingNotification = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted && !controller.disposed) {
+          handleDepartureNotification(
+            context,
+            controller,
+            intent['event_id'],
+            intent['action'],
+          );
+        }
+      });
+    }
+    return child;
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../features/map/map_screen.dart';
+
+import '../core/design/motion.dart';
+import '../features/map/home_overview.dart';
 import '../features/journeys/screens.dart';
 import '../features/maintenance/screens.dart';
 import '../features/settings/screens.dart';
@@ -16,7 +18,7 @@ class _TrafficHomeShellState extends State<TrafficHomeShell> {
   int selected = 0;
   final visited = <int>{0};
   final pages = const [
-    MapScreen(),
+    HomeOverview(),
     JourneysScreen(),
     GarageScreen(),
     SettingsScreen(),
@@ -43,6 +45,7 @@ class _TrafficHomeShellState extends State<TrafficHomeShell> {
         ],
       ),
       bottomNavigationBar: NavigationBar(
+        animationDuration: TrafficMotion.duration(context),
         selectedIndex: selected,
         onDestinationSelected: select,
         destinations: const [
@@ -59,7 +62,7 @@ class _TrafficHomeShellState extends State<TrafficHomeShell> {
           NavigationDestination(
             icon: Icon(Icons.two_wheeler_outlined),
             selectedIcon: Icon(Icons.two_wheeler),
-            label: 'Xe của tôi',
+            label: 'Xe',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

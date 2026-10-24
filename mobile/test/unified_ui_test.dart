@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,6 +17,7 @@ import 'package:trafficgo/features/journeys/screens.dart';
 import 'package:trafficgo/features/journeys/store.dart';
 import 'package:trafficgo/features/map/map_screen.dart';
 import 'package:trafficgo/features/map/route_option.dart';
+
 import 'personalization_cases_test.dart' as fixtures;
 
 Widget host(Widget child, SharedPreferences prefs, {TrafficApi? api}) =>
@@ -75,6 +77,73 @@ void main() {
       expect(t.takeException(), isNull);
     }
     expect(identical(before, t.state(find.byType(MapScreen))), isTrue);
+    await t.pumpWidget(const SizedBox.shrink());
+    await t.pumpAndSettle();
+  });
+  testWidgets('Overview expands and collapses the same map camera', (t) async {
+    final prefs = await SharedPreferences.getInstance();
+    await t.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(host(const TrafficHomeShell(), prefs));
+    await t.pumpAndSettle();
+    final before = t.state(find.byType(MapScreen));
+    final controller = t
+        .widget<FlutterMap>(find.byType(FlutterMap))
+        .mapController!;
+    controller.move(const LatLng(21.04, 105.82), 13.5);
+    await t.pump();
+    final center = controller.camera.center;
+    final zoom = controller.camera.zoom;
+    final open = find.byTooltip('Mở bản đồ toàn màn hình');
+    await t.ensureVisible(open);
+    await t.pumpAndSettle();
+    await t.tap(open);
+    await t.pumpAndSettle();
+    expect(identical(before, t.state(find.byType(MapScreen))), isTrue);
+    expect(find.text('Tổng quan'), findsOneWidget);
+    expect(controller.camera.center, center);
+    expect(controller.camera.zoom, zoom);
+    await t.tap(find.text('Tổng quan'));
+    await t.pumpAndSettle();
+    expect(identical(before, t.state(find.byType(MapScreen))), isTrue);
+    expect(t.takeException(), isNull);
+    expect(controller.camera.center, center);
+    expect(controller.camera.zoom, zoom);
+    await t.pumpWidget(const SizedBox.shrink());
+    await t.pumpAndSettle();
+  });
+  testWidgets('Overview empty state has no fabricated departure or distance', (
+    t,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await t.pumpWidget(host(const TrafficHomeShell(), prefs));
+    await t.pumpAndSettle();
+    expect(find.text('Chào bạn 👋'), findsOneWidget);
+    expect(find.text('Sẵn sàng cho ngày mới?'), findsOneWidget);
+    expect(find.text('Tạo lịch'), findsOneWidget);
+    expect(find.text('06:55'), findsNothing);
+    await t.tap(find.text('Nhà'));
+    await t.pumpAndSettle();
+    expect(find.text('Thêm địa điểm'), findsOneWidget);
+    expect(t.takeException(), isNull);
+    await t.pumpWidget(const SizedBox.shrink());
+    await t.pumpAndSettle();
+  });
+  testWidgets('Saved shortcut selects its actual destination in retained map', (
+    t,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await AppState(
+      prefs,
+    ).save(const Place('Nhà đã lưu', LatLng(21.01, 105.81), category: 'home'));
+    await t.pumpWidget(host(const TrafficHomeShell(), prefs));
+    await t.pumpAndSettle();
+    final before = t.state(find.byType(MapScreen));
+    await t.tap(find.text('Nhà'));
+    await t.pumpAndSettle();
+    expect(identical(before, t.state(find.byType(MapScreen))), isTrue);
+    expect(find.text('Nhà đã lưu'), findsWidgets);
+    expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox.shrink());
     await t.pumpAndSettle();
   });

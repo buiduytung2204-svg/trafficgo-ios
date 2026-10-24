@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -91,7 +92,13 @@ void main() {
           ),
         ),
       );
-      await tester.drag(find.text('CMC'), const Offset(0, -350));
+      await tester.drag(
+        find.descendant(
+          of: find.byType(DraggableScrollableSheet),
+          matching: find.text('CMC'),
+        ),
+        const Offset(0, -350),
+      );
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Tìm đường theo lịch đã lưu'));
       await tester.pumpAndSettle();
@@ -122,60 +129,54 @@ void main() {
     expect(schedule.input()['vehicle'], 'motorcycle');
   });
 
-  test(
-    'Sync attaches installation credential, persists cache and fails honestly offline',
-    () async {
-      SharedPreferences.setMockInitialValues({});
-      FlutterSecureStorage.setMockInitialValues({
-        'departure-session:$apiBase': 'private-install-token',
-      });
-      final prefs = await SharedPreferences.getInstance();
-      final dio = Dio(BaseOptions(baseUrl: apiBase));
-      bool offline = false;
-      dio.interceptors.add(
-        InterceptorsWrapper(
-          onRequest: (request, handler) {
-            expect(
-              request.headers['X-Schedule-Token'],
-              'private-install-token',
+  test('Sync attaches installation credential, persists cache and fails honestly offline', () async {
+    SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({
+      'departure-session:$apiBase': 'private-install-token',
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final dio = Dio(BaseOptions(baseUrl: apiBase));
+    bool offline = false;
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (request, handler) {
+          expect(request.headers['X-Schedule-Token'], 'private-install-token');
+          if (offline) {
+            handler.reject(
+              DioException(
+                requestOptions: request,
+                type: DioExceptionType.connectionError,
+              ),
             );
-            if (offline) {
-              handler.reject(
-                DioException(
-                  requestOptions: request,
-                  type: DioExceptionType.connectionError,
-                ),
-              );
-            } else {
-              handler.resolve(
-                Response(
-                  requestOptions: request,
-                  data: overview(),
-                  statusCode: 200,
-                ),
-              );
-            }
-          },
-        ),
-      );
-      final controller = DepartureController(dio, prefs);
-      await controller.ready;
-      expect(controller.online, isTrue);
-      expect(controller.next?.name, 'Đi học CMC');
-      expect(prefs.getString(controller.cacheKey), isNotNull);
-      offline = true;
-      await controller.refresh();
-      expect(controller.online, isFalse);
-      expect(controller.schedules.single.name, 'Đi học CMC');
-      expect(controller.error, contains('chưa đồng bộ'));
-      await expectLater(
-        controller.save(controller.schedules.single.input()),
-        throwsStateError,
-      );
-      controller.dispose();
-      dio.close();
-    },
-  );
+          } else {
+            handler.resolve(
+              Response(
+                requestOptions: request,
+                data: overview(),
+                statusCode: 200,
+              ),
+            );
+          }
+        },
+      ),
+    );
+    final controller = DepartureController(dio, prefs);
+    await controller.ready;
+    expect(controller.online, isTrue);
+    expect(controller.next?.name, 'Đi học CMC');
+    expect(prefs.getString(controller.cacheKey), isNotNull);
+    offline = true;
+    await controller.refresh();
+    expect(controller.online, isFalse);
+    expect(controller.schedules.single.name, 'Đi học CMC');
+    expect(controller.error, contains('chưa đồng bộ'));
+    await expectLater(
+      controller.save(controller.schedules.single.input()),
+      throwsStateError,
+    );
+    controller.dispose();
+    dio.close();
+  });
 
   testWidgets('Offline schedule list shows cached times and disables writes', (
     tester,

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from app.schemas import RouteRequest
-from .models import Schedule, Occurrence, WorkerState
+from .models import Schedule, Occurrence, WorkerState, NotificationEvent
 from .engine import local, moments, candidate_arrivals, interval_seconds, due_kinds, TERMINAL
 from .notifications import NotificationService
 
@@ -35,6 +35,7 @@ def snapshot(data, arrival, revision):
 
 
 def recalculate(result, config):
+    config = {**config, **result.get('day_override', {})}
     if result.get('eta_s') is None:
         result.update(prepare_at=None, departure_at=None)
         return
@@ -56,8 +57,15 @@ def materialize(session, schedule, now):
             row = Occurrence(schedule_id=schedule.id, arrival_date=arrival.date().isoformat(),
                              data=snapshot(schedule.data, arrival, schedule.revision))
             session.add(row)
-        elif row.status not in TERMINAL and row.data['revision'] != schedule.revision:
+        elif row.status == 'planned' and row.data['revision'] != schedule.revision:
             updated = snapshot(schedule.data, arrival, schedule.revision)
+            updated['day_override'] = row.data.get('day_override', {})
+            if updated['day_override'].get('arrival_time'):
+                updated['arrival_at'] = datetime.combine(arrival.date(),
+                    datetime.strptime(updated['day_override']['arrival_time'], '%H:%M').time(), arrival.tzinfo).isoformat()
+            for key in ('snooze_until', 'snooze_source', 'exception_revision'):
+                if key in row.data:
+                    updated[key] = row.data[key]
             updated['attempts'] = row.data.get('attempts', 0)
             if (updated['routing_signature'] == row.data.get('routing_signature') and
                 (row.data.get('eta_source') != 'initial_estimate' or
@@ -65,6 +73,7 @@ def materialize(session, schedule, now):
                 for key in ('eta_s', 'eta_updated_at', 'eta_source', 'traffic_aware', 'last_error', 'next_check_at'):
                     updated[key] = row.data.get(key)
                 recalculate(updated, schedule.data)
+            recalculate(updated, schedule.data)
             row.data = updated
     session.flush()
 
@@ -131,7 +140,7 @@ class DepartureWorker:
                 return
             schedule = session.scalar(select(Schedule).where(Schedule.id == occurrence.schedule_id).with_for_update())
             session.refresh(occurrence, with_for_update=True)
-            if not schedule.data['enabled'] or occurrence.status in TERMINAL:
+            if not schedule.data['enabled'] or occurrence.status != 'planned':
                 return
             data = dict(occurrence.data)
             arrival = datetime.fromisoformat(data['arrival_at'])
@@ -140,8 +149,9 @@ class DepartureWorker:
                 session.commit()
                 return
             # Include long preparation/buffer windows before a midnight arrival.
-            window = arrival - timedelta(minutes=max(90, (data.get('eta_s') or 0) / 60 + 15) + schedule.data['preparation_minutes'] +
-                                         schedule.data['buffer_minutes'])
+            effective = {**schedule.data, **data.get('day_override', {})}
+            window = arrival - timedelta(minutes=max(90, (data.get('eta_s') or 0) / 60 + 15) + effective['preparation_minutes'] +
+                                         effective['buffer_minutes'])
             state = session.get(WorkerState, 'scheduler')
             budget = dict(state.data)
             day = now.astimezone(timezone.utc).date().isoformat()
@@ -160,15 +170,15 @@ class DepartureWorker:
                 budget.update(attempts=budget.get('attempts', 0) + 1,
                               provider_next_at=(now + timedelta(seconds=60)).isoformat())
                 state.data = budget
-                occurrence.data = data
-                call = (schedule.revision, RouteRequest(origin=schedule.data['origin'],
+                occurrence.data = dict(data)
+                call = (schedule.revision, data.get('exception_revision', 0), RouteRequest(origin=schedule.data['origin'],
                         destination=schedule.data['destination'], vehicle=schedule.data['vehicle']))
                 # Persist attempt BEFORE network. Crash/restart cannot reset quota.
                 session.commit()
         result, failure, retry = None, None, 900
         if call:
             try:
-                routes = await asyncio.wait_for(self.provider.calculate(call[1]), timeout=12)
+                routes = await asyncio.wait_for(self.provider.calculate(call[2]), timeout=12)
                 if not routes:
                     raise HTTPException(502, 'Empty routes')
                 result = min(routes, key=lambda route: route.duration_s)
@@ -193,9 +203,9 @@ class DepartureWorker:
                 return  # Deleted while provider call was in flight.
             schedule = session.scalar(select(Schedule).where(Schedule.id == occurrence.schedule_id).with_for_update())
             session.refresh(occurrence, with_for_update=True)
-            if not schedule or not schedule.data['enabled'] or occurrence.status in TERMINAL:
+            if not schedule or not schedule.data['enabled'] or occurrence.status != 'planned':
                 return
-            if call and schedule.revision != call[0]:
+            if call and (schedule.revision != call[0] or occurrence.data.get('exception_revision', 0) != call[1]):
                 return  # Never apply an ETA to edited endpoints.
             data = dict(occurrence.data)
             old_eta, old_departure = data.get('eta_s'), data.get('departure_at')
@@ -208,7 +218,7 @@ class DepartureWorker:
                 if failure == 'provider_http_429':
                     state = session.get(WorkerState, 'scheduler')
                     state.data = {**state.data, 'provider_next_at': data['next_check_at']}
-            occurrence.data = data
+            occurrence.data = dict(data)
             if data.get('eta_s') is not None:
                 prepare = datetime.fromisoformat(data['prepare_at'])
                 departure = datetime.fromisoformat(data['departure_at'])
@@ -218,6 +228,24 @@ class DepartureWorker:
                     kinds += ['eta_increased']
                     if old_departure and departure < datetime.fromisoformat(old_departure):
                         kinds += ['leave_earlier']
+                snooze_at = data.get('snooze_until')
+                if snooze_at:
+                    if now >= datetime.fromisoformat(snooze_at):
+                        source = session.get(NotificationEvent, data.get('snooze_source'))
+                        if source:
+                            kind = 'snooze_' + hashlib.sha256(source.id.encode()).hexdigest()[:16]
+                            event = self.notifications.emit(session, schedule, occurrence, kind, now)
+                            event.data = {**event.data, 'title': 'Nhắc lại giờ xuất phát'}
+                        # The snoozed reminder replaces currently due reminders.
+                        for due in kinds:
+                            suppressed = self.notifications.emit(session, schedule, occurrence, due, now)
+                            suppressed.data = {**suppressed.data, 'cancelled': True}
+                        kinds = []
+                        data.pop('snooze_until', None)
+                        data.pop('snooze_source', None)
+                        occurrence.data = dict(data)
+                    else:
+                        kinds = []
                 for kind in kinds:
                     self.notifications.emit(session, schedule, occurrence, kind, now)
             session.commit()

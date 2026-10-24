@@ -101,9 +101,8 @@ void main() {
       );
       expect(message, 'Daily budget reached');
       expect(
-        (await client.get(
-          Uri.parse('http://localhost/another.png'),
-        )).statusCode,
+        (await client.get(Uri.parse('http://localhost/another.png')))
+            .statusCode,
         429,
       );
       expect(calls, 1);
@@ -278,9 +277,8 @@ void main() {
         overrides: [preferencesProvider.overrideWithValue(prefs)],
         child: MaterialApp(
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: const TextScaler.linear(2)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2)),
             child: child!,
           ),
           home: const HomeGate(),
@@ -308,10 +306,10 @@ void main() {
         child: const MaterialApp(home: SavedScreen()),
       ),
     );
-    expect(
-      find.text('Chọn một điểm trên bản đồ rồi nhấn Lưu.'),
-      findsOneWidget,
-    );
+    await tester.pumpAndSettle();
+    expect(find.text('Những nơi thân quen'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
   testWidgets('iPhone map switches to motorcycle', (tester) async {
     tester.view.physicalSize = const Size(390, 844);

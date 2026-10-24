@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,79 +76,71 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({'access': 'test-shared-access'});
   });
-  test(
-    'Guest data and account vehicle / route / expenses stay separate after restart',
-    () async {
-      final prefs = await SharedPreferences.getInstance();
-      final guest = AppState(prefs);
-      await guest.save(const Place('Nhà khách', LatLng(21, 105.8)));
-      final old = JourneyStore(prefs);
-      await old.saveJourney(const Journey(id: 'guest', name: 'Tuyến khách'));
-      await prefs.setString('active-account-id', 'alice');
-      final a = AppState(prefs),
-          garageA = GarageStore(prefs),
-          journeyA = JourneyStore(prefs);
-      expect(a.saved, isEmpty);
-      expect(journeyA.journeys, isEmpty);
-      await a.save(const Place('Nhà Alice', LatLng(21.1, 105.8)));
-      await garageA.saveVehicle({
-        'id': 'wave',
-        'name': 'Wave của Alice',
-        'model_id': 'wave_alpha',
-        'year': 2020,
-        'variant': 'Thường',
-        'odometer': 100,
-      });
-      await journeyA.saveJourney(
-        const Journey(id: 'alice-trip', name: 'Đi học'),
-      );
-      await prefs.setString('active-account-id', 'bob');
-      expect(AppState(prefs).saved, isEmpty);
-      expect(GarageStore(prefs).vehicles, isEmpty);
-      expect(JourneyStore(prefs).journeys, isEmpty);
-      // Old objects never write into the newly active namespace.
-      await a.save(const Place('Trường Alice', LatLng(21.2, 105.8)));
-      expect(AppState(prefs).saved, isEmpty);
-      await prefs.setString('active-account-id', 'alice');
-      expect(AppState(prefs).saved.length, 2);
-      expect(GarageStore(prefs).vehicles.single['id'], 'wave');
-      expect(JourneyStore(prefs).journeys.single.id, 'alice-trip');
-      await prefs.remove('active-account-id');
-      expect(AppState(prefs).saved.single.name, 'Nhà khách');
-      expect(JourneyStore(prefs).journeys.single.id, 'guest');
-    },
-  );
-  test(
-    'Login, setup failure, successful retry and logout keep credentials out of preferences',
-    () async {
-      final prefs = await SharedPreferences.getInstance();
-      final adapter = LocalAdapter();
-      final dio = Dio(BaseOptions(baseUrl: 'http://test'))
-        ..httpClientAdapter = adapter;
-      final c = AccountController(prefs, client: dio);
-      await c.ready;
-      await c.authenticate('student', 'test-password-123', register: true);
-      expect(c.id, 'student');
-      expect(c.complete, false);
-      expect(
-        prefs.getString('account:student:profile'),
-        isNot(contains('test-private-session')),
-      );
-      adapter.offline = true;
-      await expectLater(
-        c.setup({'display_name': 'Sinh viên'}),
-        throwsA(isA<DioException>()),
-      );
-      expect(c.complete, false);
-      adapter.offline = false;
-      await c.setup({'display_name': 'Sinh viên'});
-      expect(c.complete, true);
-      await c.logout();
-      expect(c.id, isNull);
-      expect(prefs.getString('account:student:profile'), isNotNull);
-      c.dispose();
-    },
-  );
+  test('Guest data and account vehicle / route / expenses stay separate after restart', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final guest = AppState(prefs);
+    await guest.save(const Place('Nhà khách', LatLng(21, 105.8)));
+    final old = JourneyStore(prefs);
+    await old.saveJourney(const Journey(id: 'guest', name: 'Tuyến khách'));
+    await prefs.setString('active-account-id', 'alice');
+    final a = AppState(prefs),
+        garageA = GarageStore(prefs),
+        journeyA = JourneyStore(prefs);
+    expect(a.saved, isEmpty);
+    expect(journeyA.journeys, isEmpty);
+    await a.save(const Place('Nhà Alice', LatLng(21.1, 105.8)));
+    await garageA.saveVehicle({
+      'id': 'wave',
+      'name': 'Wave của Alice',
+      'model_id': 'wave_alpha',
+      'year': 2020,
+      'variant': 'Thường',
+      'odometer': 100,
+    });
+    await journeyA.saveJourney(const Journey(id: 'alice-trip', name: 'Đi học'));
+    await prefs.setString('active-account-id', 'bob');
+    expect(AppState(prefs).saved, isEmpty);
+    expect(GarageStore(prefs).vehicles, isEmpty);
+    expect(JourneyStore(prefs).journeys, isEmpty);
+    // Old objects never write into the newly active namespace.
+    await a.save(const Place('Trường Alice', LatLng(21.2, 105.8)));
+    expect(AppState(prefs).saved, isEmpty);
+    await prefs.setString('active-account-id', 'alice');
+    expect(AppState(prefs).saved.length, 2);
+    expect(GarageStore(prefs).vehicles.single['id'], 'wave');
+    expect(JourneyStore(prefs).journeys.single.id, 'alice-trip');
+    await prefs.remove('active-account-id');
+    expect(AppState(prefs).saved.single.name, 'Nhà khách');
+    expect(JourneyStore(prefs).journeys.single.id, 'guest');
+  });
+  test('Login, setup failure, successful retry and logout keep credentials out of preferences', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final adapter = LocalAdapter();
+    final dio = Dio(BaseOptions(baseUrl: 'http://test'))
+      ..httpClientAdapter = adapter;
+    final c = AccountController(prefs, client: dio);
+    await c.ready;
+    await c.authenticate('student', 'test-password-123', register: true);
+    expect(c.id, 'student');
+    expect(c.complete, false);
+    expect(
+      prefs.getString('account:student:profile'),
+      isNot(contains('test-private-session')),
+    );
+    adapter.offline = true;
+    await expectLater(
+      c.setup({'display_name': 'Sinh viên'}),
+      throwsA(isA<DioException>()),
+    );
+    expect(c.complete, false);
+    adapter.offline = false;
+    await c.setup({'display_name': 'Sinh viên'});
+    expect(c.complete, true);
+    await c.logout();
+    expect(c.id, isNull);
+    expect(prefs.getString('account:student:profile'), isNotNull);
+    c.dispose();
+  });
   testWidgets(
     'Mandatory setup validates name and motorcycle before letting user continue',
     (t) async {
@@ -249,8 +242,10 @@ void main() {
       expect(find.text('Bước 5/5 · Lịch đi lại'), findsOneWidget);
       // Going back/reopening must not replace geometry with a newly calculated route.
       await t.ensureVisible(find.text('Quay lại'));
+      await t.pumpAndSettle();
       await t.tap(find.text('Quay lại'));
       await t.pumpAndSettle();
+      await t.scrollUntilVisible(find.textContaining('valhalla'), 200);
       expect(find.textContaining('valhalla'), findsOneWidget);
       await t.binding.setSurfaceSize(const Size(320, 694));
       addTearDown(() => t.binding.setSurfaceSize(null));
@@ -262,12 +257,13 @@ void main() {
       expect(stored['trip']['route']['id'], 'exact-route');
       expect(stored['trip']['route']['geometry'].length, 2);
       expect(adapter.setups, isEmpty);
-      await t.ensureVisible(find.text('Tiếp tục'));
+      await t.scrollUntilVisible(find.text('Tiếp tục'),150);
+      await t.pumpAndSettle();
       await t.tap(find.text('Tiếp tục'));
       await t.pumpAndSettle();
       await t.drag(find.byType(ListView).last, const Offset(0, -500));
       await t.pumpAndSettle();
-      await t.ensureVisible(find.text('Hoàn tất và tạo lịch'));
+      await t.scrollUntilVisible(find.text('Hoàn tất và tạo lịch'),150);
       await t.pumpAndSettle();
       await t.tap(find.text('Hoàn tất và tạo lịch'));
       await t.pumpAndSettle();

@@ -22,6 +22,13 @@ class PushNotificationProvider(Protocol):
 
 class NotificationService:
     def emit(self, session, schedule, occurrence, kind, now):
+        message = MESSAGES.get(kind, 'Nhắc lại giờ xuất phát')
+        schedule_revision = occurrence.data.get('revision', 1)
+        if schedule_revision > 1:
+            kind = f'{kind}:s{schedule_revision}'
+        revision = occurrence.data.get('exception_revision', 0)
+        if revision:
+            kind = f'{kind}:{revision}'
         # Unique DB constraint is the final protection across restart/repeated ticks.
         found = session.scalar(select(NotificationEvent).where(
             NotificationEvent.occurrence_id == occurrence.id, NotificationEvent.kind == kind))
@@ -29,9 +36,11 @@ class NotificationService:
             return found
         row = NotificationEvent(user_id=schedule.user_id, occurrence_id=occurrence.id,
             kind=kind, created_at=now.isoformat(), data={
-                'title': MESSAGES[kind], 'schedule_name': schedule.data['name'],
+                'title': message, 'schedule_name': schedule.data['name'],
                 'schedule_id': schedule.id, 'route': {k: schedule.data.get(k) for k in
                     ('origin', 'destination', 'origin_name', 'destination_name', 'vehicle', 'journey_id', 'direction')},
+                'arrival_date': occurrence.arrival_date,
+                'arrival_at': occurrence.data.get('arrival_at'),
                 'departure_at': occurrence.data.get('departure_at'),
                 'eta_s': occurrence.data.get('eta_s'),
                 'eta_source': occurrence.data.get('eta_source'),

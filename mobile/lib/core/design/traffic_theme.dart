@@ -4,11 +4,20 @@ import 'package:forui/forui.dart';
 /// Shared tokens: Forui is the source of truth; existing Material forms inherit
 /// the same palette so their behaviour can be retained during the migration.
 abstract final class TrafficTokens {
-  static const brand = Color(0xff007c78);
-  static const radius = 20.0;
+  static const brand = Color(0xff20252b);
+  static const lime = Color(0xffc6f36b);
+  static const limeBright = Color(0xffd9fa84);
+  static const radius = 24.0;
   static const page = 20.0;
   static const gap = 12.0;
-  static const motion = Duration(milliseconds: 180);
+  static const motion = Duration(milliseconds: 280);
+  static Color blue(BuildContext c) => Theme.of(c).brightness == Brightness.dark
+      ? const Color(0xff9cc9ff)
+      : const Color(0xff2366b5);
+  static Color amber(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark
+      ? const Color(0xffffcf87)
+      : const Color(0xff995700);
 
   static final _light = _createForui(Brightness.light);
   static final _dark = _createForui(Brightness.dark);
@@ -21,21 +30,27 @@ abstract final class TrafficTokens {
     return FThemeData(
       touch: true,
       colors: base.colors.copyWith(
-        primary: dark ? const Color(0xff78d8ce) : brand,
-        primaryForeground: dark ? const Color(0xff003c3a) : Colors.white,
-        background: dark ? const Color(0xff101918) : const Color(0xfff5f8f7),
-        foreground: dark ? const Color(0xffedf5f3) : const Color(0xff162b29),
+        primary: dark ? const Color(0xffc6f36b) : brand,
+        primaryForeground: dark ? const Color(0xff171c24) : Colors.white,
+        background: dark ? const Color(0xff14171b) : const Color(0xfff5f6f2),
+        card: dark ? const Color(0xff20252b) : Colors.white,
+        secondary: dark ? const Color(0xff30362c) : const Color(0xffeaeee6),
+        secondaryForeground: dark
+            ? const Color(0xffd9fa84)
+            : const Color(0xff20252b),
+        border: dark ? const Color(0xff3b423b) : const Color(0xffe4e8e0),
+        foreground: dark ? const Color(0xfff5f6f2) : const Color(0xff171c24),
       ),
       typography: base.typography.copyWith(
         body: FTypeface.inherit(
           colors: base.colors,
           touch: true,
-          fontFamily: 'Roboto',
+          fontFamily: 'BeVietnamPro',
         ),
         display: FTypeface.inherit(
           colors: base.colors,
           touch: true,
-          fontFamily: 'Roboto',
+          fontFamily: 'BeVietnamPro',
         ),
       ),
       style: base.style.copyWith(
@@ -56,9 +71,23 @@ abstract final class TrafficTokens {
     final dark = brightness == Brightness.dark;
     final colors =
         ColorScheme.fromSeed(seedColor: brand, brightness: brightness).copyWith(
-          primary: dark ? const Color(0xff78d8ce) : brand,
-          onPrimary: dark ? const Color(0xff003c3a) : Colors.white,
-          surface: dark ? const Color(0xff15211f) : Colors.white,
+          primary: dark ? const Color(0xffc6f36b) : brand,
+          onPrimary: dark ? const Color(0xff171c24) : Colors.white,
+          surface: dark ? const Color(0xff20252b) : Colors.white,
+          onSurface: dark ? const Color(0xfff5f6f2) : const Color(0xff171c24),
+          onSurfaceVariant: dark
+              ? const Color(0xffb7bfaf)
+              : const Color(0xff596477),
+          outlineVariant: dark
+              ? const Color(0xff3b423b)
+              : const Color(0xffe4e8e0),
+          primaryContainer: dark ? const Color(0xff384527) : lime,
+          onPrimaryContainer: dark ? limeBright : const Color(0xff171c24),
+          secondaryContainer: dark
+              ? const Color(0xff30362c)
+              : const Color(0xffeaeee6),
+          secondary: dark ? const Color(0xff9cc9ff) : const Color(0xff2366b5),
+          tertiary: dark ? const Color(0xffffcf87) : const Color(0xff995700),
         );
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
@@ -67,9 +96,61 @@ abstract final class TrafficTokens {
     return base.copyWith(
       colorScheme: colors,
       scaffoldBackgroundColor: forui(brightness).colors.background,
-      textTheme: ThemeData(brightness: brightness).textTheme.apply(
-        bodyColor: colors.onSurface,
-        displayColor: colors.onSurface,
+      textTheme: base.textTheme
+          .copyWith(
+            bodyLarge: const TextStyle(
+              fontSize: 17,
+              height: 1.45,
+              fontWeight: FontWeight.w400,
+            ),
+            bodyMedium: const TextStyle(
+              fontSize: 16,
+              height: 1.45,
+              fontWeight: FontWeight.w400,
+            ),
+            bodySmall: const TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              fontWeight: FontWeight.w400,
+            ),
+            titleMedium: const TextStyle(
+              fontSize: 18,
+              height: 1.3,
+              fontWeight: FontWeight.w600,
+            ),
+            titleLarge: const TextStyle(
+              fontSize: 22,
+              height: 1.25,
+              fontWeight: FontWeight.w700,
+            ),
+            headlineSmall: const TextStyle(
+              fontSize: 26,
+              height: 1.2,
+              fontWeight: FontWeight.w800,
+            ),
+            headlineMedium: const TextStyle(
+              fontSize: 32,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+            ),
+            labelLarge: const TextStyle(
+              fontSize: 15,
+              height: 1.3,
+              fontWeight: FontWeight.w600,
+            ),
+          )
+          .apply(
+            fontFamily: 'BeVietnamPro',
+            bodyColor: colors.onSurface,
+            displayColor: colors.onSurface,
+          ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: colors.primary,
+        unselectedLabelColor: colors.onSurfaceVariant,
+        indicatorColor: colors.primary,
+        dividerColor: Colors.transparent,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+        indicatorSize: TabBarIndicatorSize.tab,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: forui(brightness).colors.background,
@@ -78,7 +159,7 @@ abstract final class TrafficTokens {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontFamily: 'Roboto',
+          fontFamily: 'BeVietnamPro',
           color: colors.onSurface,
           fontSize: 22,
           fontWeight: FontWeight.w700,
@@ -125,7 +206,7 @@ abstract final class TrafficTokens {
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+        style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
       ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -139,7 +220,26 @@ abstract final class TrafficTokens {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surface,
-        indicatorColor: colors.primaryContainer,
+        indicatorColor: colors.secondaryContainer,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? colors.primary
+                : colors.onSurfaceVariant,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontFamily: 'BeVietnamPro',
+            fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? colors.primary
+                : colors.onSurfaceVariant,
+          ),
+        ),
         elevation: 0,
         height: 74,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

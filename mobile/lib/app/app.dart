@@ -3,6 +3,7 @@ import '../core/design/traffic_theme.dart';
 import 'home_shell.dart';
 import '../features/onboarding/accounts.dart';
 import '../features/onboarding/screens.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,8 +42,12 @@ final router = GoRouter(
       builder: (context, state) {
         final data = state.extra as Map<String, dynamic>?;
         return MapScreen(
+          autoStartNavigation: data?['start_navigation'] == true,
           plannedTrip: data?['trip'] as SavedTrip?,
           plannedVehicle: data?['vehicle'] as String?,
+          journeyId: data?['journey_id'] as String?,
+          direction: data?['direction'] as String?,
+          occurrenceId: data?['occurrence_id'] as String?,
         );
       },
     ),
@@ -133,12 +138,16 @@ class _HomeGateState extends ConsumerState<HomeGate> {
               );
             }
             if (!account.complete) return const PersonalSetupScreen();
-            return TrafficHomeShell(key: ValueKey('account:${account.id}'));
+            return DepartureNotificationBridge(
+              child: TrafficHomeShell(key: ValueKey('account:${account.id}')),
+            );
           },
         );
       }
       if (state.onboarded) {
-        return const TrafficHomeShell(key: ValueKey('guest'));
+        return const DepartureNotificationBridge(
+          child: TrafficHomeShell(key: ValueKey('guest')),
+        );
       }
       return Scaffold(
         body: SafeArea(
@@ -155,7 +164,7 @@ class _HomeGateState extends ConsumerState<HomeGate> {
                       const Icon(
                         Icons.explore_rounded,
                         size: 90,
-                        color: Color(0xff007c78),
+                        color: Color(0xff20252b),
                       ),
                       const SizedBox(height: 28),
                       Text(

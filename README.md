@@ -47,3 +47,7 @@ Hồ sơ cá nhân, tài khoản và thiết lập xe/lịch lần đầu: [docs
 ## Giao diện thống nhất
 
 Xem [UI/UX redesign](docs/UI_REDESIGN.md): theme xanh ngọc light/dark, 4 tab giữ trạng thái bản đồ, Forui primary actions, calendar Shadcn, Wolt forms và FL Chart từ chi phí thật. Flutter/CI vẫn dùng 3.47.7.
+
+Ngoại lệ lịch lặp và thao tác thông báo: [hướng dẫn sử dụng](docs/SCHEDULE_EXCEPTIONS.md).
+
+UI và chuyển động: [thiết kế, dependency và kiểm tra](docs/UI_MOTION_REFRESH.md).

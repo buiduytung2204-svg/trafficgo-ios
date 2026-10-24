@@ -1,6 +1,7 @@
 // Accelerated QA data only. Never imports into the user's real preferences.
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -11,6 +12,7 @@ import 'package:trafficgo/core/design/traffic_theme.dart';
 import 'package:trafficgo/features/journeys/store.dart';
 import 'package:trafficgo/features/journeys/screens.dart';
 import 'package:trafficgo/features/maintenance/store.dart';
+
 import 'personalization_cases_test.dart' as fixture;
 
 Map<String, dynamic> fallback() {
@@ -200,48 +202,45 @@ void main() {
       checks.add('Account namespace isolation');
     },
   );
-  test(
-    'Manual odometer crosses reminder and confirmation does not duplicate service',
-    () async {
-      final p = await prefs();
-      final s = GarageStore(p);
-      final v = {
-        'id': 'qa-boundary',
-        'name': 'QA boundary vehicle',
-        'model_id': 'wave_alpha',
-        'year': 2024,
-        'variant': 'Thường',
-        'odometer': 5999,
-      };
-      await s.saveVehicle(v);
-      final item = {
-        'id': 'qa-boundary-oil',
-        'vehicle_id': 'qa-boundary',
-        'name': 'QA tự đặt',
-        'due_km': 6000,
-      };
-      await s.saveItem(item);
-      expect(maintenanceStatus(item, v, DateTime.now()), 'Sắp đến hạn');
-      await s.saveVehicle({...v, 'odometer': 6000});
-      expect(
-        maintenanceStatus(item, {...v, 'odometer': 6000}, DateTime.now()),
-        'Đến hạn',
-      );
-      await s.saveVehicle({...v, 'odometer': 6001});
-      expect(
-        maintenanceStatus(item, {...v, 'odometer': 6001}, DateTime.now()),
-        'Quá hạn',
-      );
-      final before = s.history.length;
-      await s.complete('qa-boundary-oil');
-      await s.complete('qa-boundary-oil');
-      expect(s.history.length, before + 1);
-      expect(JourneyStore(p).expenses.length, 26);
-      checks.add(
-        'Manual mileage threshold/idempotent maintenance/no automatic expense',
-      );
-    },
-  );
+  test('Manual odometer crosses reminder and confirmation does not duplicate service', () async {
+    final p = await prefs();
+    final s = GarageStore(p);
+    final v = {
+      'id': 'qa-boundary',
+      'name': 'QA boundary vehicle',
+      'model_id': 'wave_alpha',
+      'year': 2024,
+      'variant': 'Thường',
+      'odometer': 5999,
+    };
+    await s.saveVehicle(v);
+    final item = {
+      'id': 'qa-boundary-oil',
+      'vehicle_id': 'qa-boundary',
+      'name': 'QA tự đặt',
+      'due_km': 6000,
+    };
+    await s.saveItem(item);
+    expect(maintenanceStatus(item, v, DateTime.now()), 'Sắp đến hạn');
+    await s.saveVehicle({...v, 'odometer': 6000});
+    expect(
+      maintenanceStatus(item, {...v, 'odometer': 6000}, DateTime.now()),
+      'Đến hạn',
+    );
+    await s.saveVehicle({...v, 'odometer': 6001});
+    expect(
+      maintenanceStatus(item, {...v, 'odometer': 6001}, DateTime.now()),
+      'Quá hạn',
+    );
+    final before = s.history.length;
+    await s.complete('qa-boundary-oil');
+    await s.complete('qa-boundary-oil');
+    expect(s.history.length, before + 1);
+    expect(JourneyStore(p).expenses.length, 26);
+    checks.add(
+      'Manual mileage threshold/idempotent maintenance/no automatic expense',
+    );
+  });
   testWidgets(
     'Opening expense UI shows actual fixture totals, never completes trips',
     (t) async {
@@ -256,6 +255,10 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
+      await t.scrollUntilVisible(
+        find.textContaining('Chuyến đã xác nhận hoàn thành: 18'),
+        200,
+      );
       expect(
         find.textContaining('Chuyến đã xác nhận hoàn thành: 18'),
         findsOneWidget,

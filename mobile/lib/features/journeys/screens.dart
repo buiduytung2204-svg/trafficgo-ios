@@ -2,8 +2,10 @@ import '../../core/design/components.dart';
 import '../../core/design/sheets.dart';
 import 'expense_chart.dart';
 import '../../app/state.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/api.dart';
 import '../../core/models.dart';
 import '../map/map_screen.dart';
@@ -14,9 +16,8 @@ import 'store.dart';
 
 void notifyError(BuildContext c, Object e) {
   if (c.mounted) {
-    ScaffoldMessenger.of(
-      c,
-    ).showSnackBar(SnackBar(content: Text(errorMessage(e))));
+    ScaffoldMessenger.of(c)
+        .showSnackBar(SnackBar(content: Text(errorMessage(e))));
   }
 }
 
@@ -99,22 +100,31 @@ class JourneysScreen extends ConsumerWidget {
               message: 'Tạo hành trình và chọn riêng tuyến chiều đi, chiều về.',
             ),
           for (final j in store.journeys)
-            Card(
-              child: ListTile(
-                leading: Icon(
-                  j.category == 'school'
-                      ? Icons.school
-                      : j.category == 'work'
-                      ? Icons.work
-                      : Icons.route,
-                ),
-                title: Text(j.name),
-                subtitle: Text(
-                  '${j.enabled ? 'Đang hoạt động' : 'Tạm dừng'} • ${j.outbound == null ? 'Chưa có chiều đi' : 'Có chiều đi'} • ${j.inbound == null ? 'Chưa có chiều về' : 'Có chiều về'}',
-                ),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => JourneyDetail(id: j.id)),
+            TrafficEntrance(
+              key: ValueKey('journey:${j.id}'),
+              child: Card(
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: j.category == 'work'
+                        ? Theme.of(context).colorScheme.secondaryContainer
+                        : Theme.of(context).colorScheme.primaryContainer,
+                    child: Icon(
+                      j.category == 'school'
+                          ? Icons.school
+                          : j.category == 'work'
+                          ? Icons.work
+                          : Icons.route,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  title: Text(j.name),
+                  subtitle: Text(
+                    '${j.enabled ? 'Đang hoạt động' : 'Tạm dừng'} • ${j.outbound == null ? 'Chưa có chiều đi' : 'Có chiều đi'} • ${j.inbound == null ? 'Chưa có chiều về' : 'Có chiều về'}',
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => JourneyDetail(id: j.id)),
+                  ),
                 ),
               ),
             ),
@@ -574,16 +584,17 @@ class _RoutePlannerState extends ConsumerState<RoutePlanner> {
           icon: const Icon(Icons.swap_vert),
           label: const Text('Đảo hai điểm • tính tuyến mới'),
         ),
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'car', label: Text('Ô tô')),
-            ButtonSegment(value: 'motorcycle', label: Text('Xe máy')),
-          ],
-          selected: {vehicle},
-          onSelectionChanged: busy
+        TrafficToggle<String>(
+          value: vehicle,
+          values: const ['car', 'motorcycle'],
+          label: (v) => v == 'car' ? 'Ô tô' : 'Xe máy',
+          icon: (v) => v == 'car'
+              ? Icons.directions_car_rounded
+              : Icons.two_wheeler_rounded,
+          onChanged: busy
               ? null
               : (v) => setState(() {
-                  vehicle = v.first;
+                  vehicle = v;
                   routes = [];
                 }),
         ),
@@ -861,11 +872,15 @@ class ExpensesScreen extends ConsumerWidget {
             'Chuyến đã xác nhận hoàn thành: ${s.completed.length}\nChi phí trung bình/chuyến (toàn bộ khoản chi): ${s.completed.isEmpty ? 'Chưa có chuyến' : '${(total / s.completed.length).round()} đ'}',
           ),
           const Divider(),
-          ExpenseWeekChart(store: s, today: today),
+          ExpensePeriodChart(store: s, today: today),
           const Divider(),
           const Text('Theo loại (toàn bộ thời gian)'),
           for (final e in totals.entries)
             ListTile(
+              leading: Icon(
+                expenseIcon(e.key),
+                color: Theme.of(context).colorScheme.secondary,
+              ),
               title: Text(expenseTypes[e.key] ?? e.key),
               trailing: Text(formatVnd(e.value)),
             ),
@@ -894,6 +909,12 @@ class ExpensesScreen extends ConsumerWidget {
             ...s.expenses,
           ]..sort((a, b) => b.date.compareTo(a.date)))
             ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .secondaryContainer,
+                child: Icon(expenseIcon(e.category)),
+              ),
               title: Text(
                 '${expenseTypes[e.category]} • ${formatVnd(e.amount)}',
               ),
@@ -932,3 +953,15 @@ class ExpensesScreen extends ConsumerWidget {
     );
   }
 }
+
+IconData expenseIcon(String category) =>
+    const {
+      'fuel': Icons.local_gas_station_rounded,
+      'parking': Icons.local_parking_rounded,
+      'toll': Icons.toll_rounded,
+      'bus': Icons.directions_bus_rounded,
+      'rail': Icons.train_rounded,
+      'taxi': Icons.local_taxi_rounded,
+      'other': Icons.receipt_long_rounded,
+    }[category] ??
+    Icons.receipt_long_rounded;

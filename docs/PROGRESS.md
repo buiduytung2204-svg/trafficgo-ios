@@ -267,3 +267,44 @@ No credentials changed, no push/deploy or paid plan activation.
   build/reports/TrafficGo-QA14-report.zip excludes credentials.
 - Device GPS/real driving/closed-app push/browser manual clicks unverified.
 - See docs/QA14_TEST_PLAN.md. No push/deploy and no existing user data overwritten.
+
+
+## 2026-10-24 — Ngoại lệ lịch và thao tác thông báo
+
+- Nhánh `feature/schedule-day-exceptions`, chưa commit/push.
+- Thêm ngoại lệ ngày (nghỉ/đổi giờ/khôi phục) trong occurrence JSON, giữ lịch tuần và các chuyến terminal; sửa lịch tuần không xóa ngoại lệ. Có danh sách ngoại lệ trong lịch nhắc.
+- Thêm API hành động thông báo, trạng thái in_progress, định danh sự kiện con nhắc lại 5 phút, kiểm tra owner, chống lặp/replay sau hoàn thành và hủy nhắc khi bỏ qua/tắt lịch.
+- Worker giữ mốc nhắc qua restart, dùng exception_revision để không áp ETA đang chạy lên ngày vừa sửa; quota routing giữ nguyên.
+- Flutter: ba nút trong hộp thư/native, payload theo tài khoản, mở đúng chiều/occurrence; Xuất phát nối luồng GPS/dẫn đường có sẵn. Nhắc lại dùng local zonedSchedule (Android inexact), không giả lập FCM/APNs.
+- Native cấu hình ActionBroadcastReceiver + ScheduledNotificationReceiver; iOS category/actions và UNUserNotificationCenter delegate, chưa test thiết bị/iOS build.
+- Kiểm chứng: backend full 103 passed; Flutter full 126 passed; analyze sạch; thêm test platform channel Android và mở đúng inbound. Test dùng DB/fake routing tách biệt, không sửa dữ liệu admin.
+- Backend/worker Windows đã restart, health và OpenAPI đúng, heartbeat worker xác nhận hoạt động. Đã backup SQLite trong build/runtime (ignored).
+- Hướng dẫn và giới hạn: docs/SCHEDULE_EXCEPTIONS.md. APK v5 cũ chưa chứa tính năng mới.
+
+
+## 2026-10-24 — Kiểm thử theo yêu cầu cho hai chức năng mới
+
+- Chạy lại 31 test backend + 12 test Flutter nghiệp vụ + 2 test layout: 45/45 đạt; analyze sạch.
+- Bổ sung case còn 4 phút không cho snooze, thông báo hết hạn, ngày không thuộc lịch lặp và nghỉ qua restart không ảnh hưởng ngày kế tiếp.
+- Chụp và xem ảnh widget light 390px / dark 320px chữ 200% với Roboto; không phát hiện tràn layout. Sửa cleanup controller trong harness test để không để timer treo.
+- Tạo docs/SCHEDULE_ACTION_TEST_CASES.md và build/reports/schedule-actions-qa/ (16 nhóm case, JUnit XML, Flutter machine logs, JSON, ảnh).
+- Không sửa dữ liệu admin, không gọi routing live, không push. Native Android được mock, chưa kiểm thử tray/GPS/khóa màn hình trên thiết bị thật.
+
+
+## 2026-10-24 — UI motion refresh
+
+- Ghi baseline trước khi sửa: 128 test Flutter/analyze sạch, 26 case UI và 28 ảnh. Snapshot source mobile giữ ở build/reports/motion-refresh/source-before (ignored). Giữ nguyên thay đổi lịch/thông báo đang dở, không push.
+- Nâng theme, typography, card/empty illustration, hero chuyến tiếp theo; TrafficPress/TrafficEntrance; button async gate, loading ổn định kích thước, success/error trung thực, haptic hỗ trợ. Bộ chọn xe/chu kỳ biểu đồ trượt; sheet/map giữ camera và attribution.
+- Cá nhân có avatar/nhóm card; garage rõ header và thông tin nguồn thu gọn; FL Chart 7/30 ngày từ dữ liệu thật, cache plot.
+- Thêm Flutter Animate4.5.2 và Animated Toggle Switch0.8.7, transitive flutter_shaders0.1.5, BSD-3-Clause; giữ Forui/Shadcn/Wolt/FLChart. Rive/AnimatedButton không thêm; minh họa Flutter tự dựng.
+- Đã sửa lỗi dropdown giao diện tràn ở 320px/chữ200, kích thước button tăng khi loading, và bỏ FTappable delays để tránh timer chờ khi đóng form. Các test cũ được cuộn tới nút trước khi bấm, không bỏ kiểm tra nghiệp vụ.
+- Xác minh: 138 test Flutter,107 test backend đạt; 26 case UI và10 case motion/interactions. Analyze sạch. Tôn trọng reduced motion cho button/entrance/toggle/Wolt/navigation/GPS indicator.
+- Báo cáo/ảnh trước-sau/GIF frame: build/reports/motion-refresh/; docs/UI_MOTION_REFRESH.md. Chỉ widget-render, chưa test độ mượt/FPS/haptic thiết bị thật, chưa build iOS hoặc APK mới.
+
+- Build web cuối thành công (68.6s); cập nhật localhost:5173, xác minh SHA-256 JS qua HTTP và scan secrets đạt. Giữ index/bootstrap QA cũ và dữ liệu localStorage. Kiểm tra cuối thêm 10 test motion và 18 test motion/map đạt.
+
+## UI Đen than + Lime — 2026-10-25
+- Thay nền theme Material/Forui, bundle Be Vietnam Pro OFL, thêm HomeOverview theo mẫu số 3.
+- Giữ cùng MapScreen/MapController giữa bản đồ khung và toàn màn hình; test giữ camera/tab. Shortcut dùng địa điểm đã lưu hoặc mở picker + form lưu thực tế.
+- Thẻ lịch chỉ dùng ETA và tuyến liên kết hợp lệ; không tạo giờ/quãng đường giả. Bản đồ vẫn dùng provider hiện tại.
+- Full suite: 143 test passed; analyze sạch. Chi tiết ảnh, khác biệt và giới hạn trong UI_CHARCOAL_LIME.md. Không kiểm thử iOS/thiết bị thật, không push.

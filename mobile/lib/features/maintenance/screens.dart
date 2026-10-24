@@ -1,8 +1,10 @@
 import '../../core/design/sheets.dart';
 import '../../core/design/components.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../journeys/screens.dart';
 import '../journeys/store.dart';
 import 'store.dart';
@@ -60,8 +62,17 @@ class GarageScreen extends ConsumerWidget {
             subtitle: 'Công-tơ-mét thực tế và mốc bảo dưỡng của bạn.',
             icon: Icons.two_wheeler,
           ),
-          const Text(
-            'Nhắc trong ứng dụng khi mở màn hình. Chưa gửi push bảo dưỡng khi app đóng. Số km do bạn cập nhật từ công-tơ-mét; không cộng từ tuyến dự kiến.',
+          const ExpansionTile(
+            title: Text('Về nhắc bảo dưỡng'),
+            leading: Icon(Icons.info_outline_rounded),
+            children: [
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Nhắc trong ứng dụng khi mở màn hình. Chưa gửi push bảo dưỡng khi app đóng. Số km do bạn cập nhật từ công-tơ-mét; không cộng từ tuyến dự kiến.',
+                ),
+              ),
+            ],
           ),
           if (garage.error != null) Text(garage.error!),
           if (catalog.isLoading) const LinearProgressIndicator(),
@@ -74,143 +85,169 @@ class GarageScreen extends ConsumerWidget {
             const EmptyPanel(
               icon: Icons.two_wheeler,
               title: 'Chưa có xe',
-              message:
-                  'Thêm Honda Wave, Vision, Future, LEAD, SH hoặc SH mode (2020–2026).',
+              message: 'Thêm Honda Wave, Vision, Future, LEAD, SH hoặc SH mode (2020–2026).',
             ),
           for (final v in garage.vehicles)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      v['name'],
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    Text(
-                      '${v['year']} • ${v['variant']} • ${v['odometer']} km',
-                    ),
-                    Wrap(
-                      children: [
-                        TextButton(
-                          onPressed: () async {
-                            final value = await editText(
-                              context,
-                              'Công-tơ-mét hiện tại (km)',
-                              initial: '${v['odometer']}',
-                            );
-                            if (value == null) return;
-                            try {
-                              final km = int.tryParse(value);
-                              if (km == null) {
-                                throw ArgumentError('Nhập số km nguyên');
-                              }
-                              await garage.saveVehicle({...v, 'odometer': km});
-                            } catch (e) {
-                              if (context.mounted) notifyError(context, e);
-                            }
-                          },
-                          child: const Text('Cập nhật số km'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MaintenanceEditor(vehicle: v),
+            TrafficEntrance(
+              key: ValueKey('vehicle:${v['id']}'),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: const Icon(
+                              Icons.two_wheeler_rounded,
+                              size: 32,
                             ),
                           ),
-                          child: const Text('Thêm mốc nhắc'),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final yes = await showDialog<bool>(
-                              context: context,
-                              builder: (c) => AlertDialog(
-                                title: const Text('Xóa xe và các mốc nhắc?'),
-                                content: const Text(
-                                  'Lịch sử bảo dưỡng và chi phí đã ghi vẫn được giữ.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(c, false),
-                                    child: const Text('Hủy'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(c, true),
-                                    child: const Text('Xóa'),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (yes == true) {
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              v['name'],
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${v['year']} • ${v['variant']} • ${v['odometer']} km',
+                      ),
+                      Wrap(
+                        children: [
+                          TextButton(
+                            onPressed: () async {
+                              final value = await editText(
+                                context,
+                                'Công-tơ-mét hiện tại (km)',
+                                initial: '${v['odometer']}',
+                              );
+                              if (value == null) return;
                               try {
-                                await garage.removeVehicle(v['id']);
+                                final km = int.tryParse(value);
+                                if (km == null) {
+                                  throw ArgumentError('Nhập số km nguyên');
+                                }
+                                await garage.saveVehicle({
+                                  ...v,
+                                  'odometer': km,
+                                });
                               } catch (e) {
                                 if (context.mounted) notifyError(context, e);
                               }
-                            }
-                          },
-                          child: const Text('Xóa xe'),
-                        ),
-                      ],
-                    ),
-                    if (catalog.hasValue)
-                      ManualLinks(catalog: catalog.requireValue, vehicle: v),
-                    for (final item in garage.items.where(
-                      (i) => i['vehicle_id'] == v['id'],
-                    ))
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          '${item['name']} • ${maintenanceStatus(item, v, DateTime.now())}',
-                        ),
-                        subtitle: Text(
-                          '${item['due_date'] == null ? '' : 'Ngày: ${item['due_date']}'} ${item['due_km'] == null ? '' : '• Mốc ${item['due_km']} km'}\n${item['source'] == 'honda_manual_selected_item' ? 'Theo ${item['source_label']}, trang PDF ${item['source_pdf_page']} • đã xác nhận sổ' : 'Do người dùng thiết lập'} • ${item['notes'] ?? ''}',
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                MaintenanceEditor(vehicle: v, item: item),
+                            },
+                            child: const Text('Cập nhật số km'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MaintenanceEditor(vehicle: v),
+                              ),
+                            ),
+                            child: const Text('Thêm mốc nhắc'),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              final yes = await showDialog<bool>(
+                                context: context,
+                                builder: (c) => AlertDialog(
+                                  title: const Text('Xóa xe và các mốc nhắc?'),
+                                  content: const Text(
+                                    'Lịch sử bảo dưỡng và chi phí đã ghi vẫn được giữ.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(c, false),
+                                      child: const Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(c, true),
+                                      child: const Text('Xóa'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (yes == true) {
+                                try {
+                                  await garage.removeVehicle(v['id']);
+                                } catch (e) {
+                                  if (context.mounted) notifyError(context, e);
+                                }
+                              }
+                            },
+                            child: const Text('Xóa xe'),
+                          ),
+                        ],
+                      ),
+                      if (catalog.hasValue)
+                        ManualLinks(catalog: catalog.requireValue, vehicle: v),
+                      for (final item in garage.items.where(
+                        (i) => i['vehicle_id'] == v['id'],
+                      ))
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            '${item['name']} • ${maintenanceStatus(item, v, DateTime.now())}',
+                          ),
+                          subtitle: Text(
+                            '${item['due_date'] == null ? '' : 'Ngày: ${item['due_date']}'} ${item['due_km'] == null ? '' : '• Mốc ${item['due_km']} km'}\n${item['source'] == 'honda_manual_selected_item' ? 'Theo ${item['source_label']}, trang PDF ${item['source_pdf_page']} • đã xác nhận sổ' : 'Do người dùng thiết lập'} • ${item['notes'] ?? ''}',
+                          ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  MaintenanceEditor(vehicle: v, item: item),
+                            ),
+                          ),
+                          trailing: IconButton(
+                            tooltip: 'Xác nhận đã bảo dưỡng',
+                            icon: const Icon(Icons.task_alt),
+                            onPressed: () async {
+                              final yes = await showDialog<bool>(
+                                context: context,
+                                builder: (c) => AlertDialog(
+                                  title: const Text(
+                                    'Đã thực hiện bảo dưỡng này?',
+                                  ),
+                                  content: const Text(
+                                    'Ghi vào lịch sử với số km hiện tại. Bạn sẽ tự thiết lập mốc tiếp theo; không tự tạo chi phí.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(c, false),
+                                      child: const Text('Hủy'),
+                                    ),
+                                    TrafficPrimaryButton(
+                                      onPressed: () => Navigator.pop(c, true),
+                                      child: const Text('Đã thực hiện'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (yes == true) {
+                                try {
+                                  await garage.complete(item['id']);
+                                } catch (e) {
+                                  if (context.mounted) notifyError(context, e);
+                                }
+                              }
+                            },
                           ),
                         ),
-                        trailing: IconButton(
-                          tooltip: 'Xác nhận đã bảo dưỡng',
-                          icon: const Icon(Icons.task_alt),
-                          onPressed: () async {
-                            final yes = await showDialog<bool>(
-                              context: context,
-                              builder: (c) => AlertDialog(
-                                title: const Text(
-                                  'Đã thực hiện bảo dưỡng này?',
-                                ),
-                                content: const Text(
-                                  'Ghi vào lịch sử với số km hiện tại. Bạn sẽ tự thiết lập mốc tiếp theo; không tự tạo chi phí.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(c, false),
-                                    child: const Text('Hủy'),
-                                  ),
-                                  TrafficPrimaryButton(
-                                    onPressed: () => Navigator.pop(c, true),
-                                    child: const Text('Đã thực hiện'),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (yes == true) {
-                              try {
-                                await garage.complete(item['id']);
-                              } catch (e) {
-                                if (context.mounted) notifyError(context, e);
-                              }
-                            }
-                          },
-                        ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -615,8 +652,7 @@ class _VerifiedOilEditorState extends ConsumerState<VerifiedOilEditor> {
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
               labelText: 'Km ở lần thay dầu gần nhất',
-              helperText:
-                  'Để trống chỉ khi xe chưa thay dầu lần đầu. Không nhập quãng đường tuyến.',
+              helperText: 'Để trống chỉ khi xe chưa thay dầu lần đầu. Không nhập quãng đường tuyến.',
             ),
           ),
           ListTile(

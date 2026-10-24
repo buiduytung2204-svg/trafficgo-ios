@@ -1,13 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
+
 import 'components.dart';
+
+WoltModalType trafficModalType(BuildContext context) {
+  final duration = TrafficMotion.duration(context);
+  if (MediaQuery.sizeOf(context).width < 600) {
+    return WoltBottomSheetType(
+      transitionDuration: duration,
+      reverseTransitionDuration: duration,
+      shapeBorder: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+    );
+  }
+  return WoltDialogType(
+    transitionDuration: duration,
+    reverseTransitionDuration: duration,
+    shapeBorder: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(24),
+    ),
+  );
+}
 
 /// Retain existing stateful editor validation/save handlers inside a responsive
 /// Wolt page rather than duplicating form logic in a second implementation.
 Future<T?> showTrafficEditor<T>(BuildContext context, Widget editor) =>
     WoltModalSheet.show<T>(
       context: context,
+      modalTypeBuilder: (_) => trafficModalType(context),
       pageListBuilder: (c) => [
         WoltModalSheetPage(
           hasTopBarLayer: false,
@@ -25,6 +47,7 @@ Future<T?> showTrafficSheet<T>(
   required Widget Function(BuildContext) builder,
 }) => WoltModalSheet.show<T>(
   context: context,
+  modalTypeBuilder: (_) => trafficModalType(context),
   pageListBuilder: (sheetContext) => [
     WoltModalSheetPage(
       hasTopBarLayer: false,

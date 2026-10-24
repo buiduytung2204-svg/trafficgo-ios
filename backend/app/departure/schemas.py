@@ -35,9 +35,27 @@ class ScheduleInput(BaseModel):
 
 
 class OccurrenceAction(BaseModel):
-    status: Literal['skipped', 'completed', 'cancelled']
+    status: Literal['skipped', 'completed', 'cancelled', 'in_progress']
 
 
 class DeviceInput(BaseModel):
     token: str = Field(min_length=16, max_length=4096)
     platform: Literal['android', 'ios']
+
+
+class DayException(BaseModel):
+    action: Literal['skip', 'change', 'reset']
+    arrival_time: str | None = Field(default=None, pattern=r'^([01]\d|2[0-3]):[0-5]\d$')
+    preparation_minutes: int | None = Field(default=None, ge=0, le=180)
+    buffer_minutes: int | None = Field(default=None, ge=0, le=180)
+
+    @model_validator(mode='after')
+    def changed(self):
+        if self.action == 'change' and all(v is None for v in
+                (self.arrival_time, self.preparation_minutes, self.buffer_minutes)):
+            raise ValueError('Choose at least one change')
+        return self
+
+
+class NotificationAction(BaseModel):
+    action: Literal['start', 'snooze', 'skip']

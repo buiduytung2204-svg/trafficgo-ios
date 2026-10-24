@@ -6,7 +6,9 @@ import 'package:trafficgo/core/api.dart';
 import 'package:trafficgo/features/map/map_screen.dart';
 import 'package:trafficgo/features/map/route_option.dart';
 import 'package:trafficgo/features/journeys/screens.dart';
+
 import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:latlong2/latlong.dart';
@@ -190,7 +192,13 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(api.calls, 0);
-      expect(find.text('Trường'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(DraggableScrollableSheet),
+          matching: find.text('Trường'),
+        ),
+        findsOneWidget,
+      );
       await tester.scrollUntilVisible(
         find.byType(RouteOption),
         200,
@@ -227,7 +235,12 @@ void main() {
       );
       expect(find.text('Vĩ độ'), findsNothing);
       expect(find.text('Kinh độ'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Lưu chính xác tuyến đã chọn'),
+        200,
+      );
       expect(find.text('Lưu chính xác tuyến đã chọn'), findsOneWidget);
+      await tester.ensureVisible(find.text('Đảo hai điểm • tính tuyến mới'));
       await tester.tap(find.text('Đảo hai điểm • tính tuyến mới'));
       await tester.pump();
       expect(find.text('Lưu chính xác tuyến đã chọn'), findsNothing);

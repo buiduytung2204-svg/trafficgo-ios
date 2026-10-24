@@ -7,6 +7,7 @@ import '../map/map_screen.dart';
 import '../journeys/screens.dart';
 import '../journeys/place_picker.dart';
 import '../../core/models.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,11 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(stateProvider);
+    final account = ref.watch(accountProvider);
+    final nickname =
+        account.account?['profile']?['nickname'] ??
+        account.account?['profile']?['display_name'] ??
+        account.account?['username'];
     return Scaffold(
       appBar: AppBar(title: const Text('Cá nhân')),
       body: ListView(
@@ -31,50 +37,78 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Địa điểm quen, sở thích và nhắc nhở trong một nơi.',
             icon: Icons.person_outline,
           ),
-          ListTile(
-            leading: const Icon(Icons.bookmark_outline),
-            title: const Text('Địa điểm và tuyến đã lưu'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/saved'),
+          TrafficCard(
+            color: Theme.of(context).colorScheme.primaryContainer
+                .withValues(alpha: .5),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                radius: 26,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Text(
+                  nickname == null || nickname.toString().trim().isEmpty
+                      ? 'T'
+                      : nickname.toString().characters.first.toUpperCase(),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              title: Text(
+                ref.watch(accountProvider).id == null
+                    ? 'Tạo tài khoản / đăng nhập'
+                    : (nickname?.toString() ?? 'Tài khoản và hồ sơ cá nhân'),
+              ),
+              subtitle: const Text('Hồ sơ cá nhân'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AccountScreen()),
+              ),
+            ),
           ),
+          const SizedBox(height: 16),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.bookmark_outline),
+                  title: const Text('Địa điểm và tuyến đã lưu'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/saved'),
+                ),
 
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: Text(
-              ref.watch(accountProvider).id == null
-                  ? 'Tạo tài khoản / đăng nhập'
-                  : 'Tài khoản và hồ sơ cá nhân',
+                ListTile(
+                  leading: const Icon(Icons.two_wheeler),
+                  title: const Text('Xe và bảo dưỡng'),
+                  subtitle: const Text(
+                    'Honda 2020–2026 • tài liệu hãng và mốc bạn thiết lập',
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const GarageScreen()),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.route),
+                  title: const Text('Hành trình và chi phí'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const JourneysScreen()),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.alarm),
+                  title: const Text('Lịch nhắc giờ xuất phát'),
+                  subtitle: const Text(
+                    'Lịch đi học, đi làm và lịch sử thông báo',
+                  ),
+                  onTap: () => context.push('/schedules'),
+                ),
+              ],
             ),
-            subtitle: const Text('Xe, địa điểm và lịch đi lại của bạn'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AccountScreen()),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.two_wheeler),
-            title: const Text('Xe và bảo dưỡng'),
-            subtitle: const Text(
-              'Honda 2020–2026 • tài liệu hãng và mốc bạn thiết lập',
-            ),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const GarageScreen()),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.route),
-            title: const Text('Hành trình và chi phí'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const JourneysScreen()),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.alarm),
-            title: const Text('Lịch nhắc giờ xuất phát'),
-            subtitle: const Text('Lịch đi học, đi làm và lịch sử thông báo'),
-            onTap: () => context.push('/schedules'),
           ),
           ExpansionTile(
             leading: const Icon(Icons.developer_mode),
@@ -159,7 +193,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
           ListTile(
             title: const Text('Giao diện'),
-            trailing: DropdownButton<ThemeMode>(
+            subtitle: DropdownButton<ThemeMode>(
+              isExpanded: true,
               value: state.theme,
               items: ThemeMode.values
                   .map(
@@ -245,7 +280,14 @@ class SavedScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: state.saved.isEmpty && state.trips.isEmpty
-          ? const Center(child: Text('Chọn một điểm trên bản đồ rồi nhấn Lưu.'))
+          ? const SingleChildScrollView(
+              padding: EdgeInsets.all(20),
+              child: EmptyPanel(
+                icon: Icons.bookmark_add_rounded,
+                title: 'Những nơi thân quen',
+                message: 'Tìm địa điểm bằng nút + hoặc chọn trên bản đồ rồi nhấn Lưu.',
+              ),
+            )
           : ListView(
               children: [
                 for (final trip in state.trips)
@@ -272,7 +314,12 @@ class SavedScreen extends ConsumerWidget {
                   ),
                 ...state.saved.map(
                   (p) => ListTile(
-                    leading: const Icon(Icons.bookmark),
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer,
+                      child: Icon(placeIcon(p.name)),
+                    ),
                     title: Text(p.name),
                     subtitle: Text('${p.address} ? ${p.category} ${p.notes}'),
                     onTap: () => context.pop(p),
