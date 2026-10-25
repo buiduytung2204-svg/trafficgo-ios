@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/state.dart';
 import '../../core/api.dart';
+import '../departure/local_notifications.dart';
 
 final accountProvider = ChangeNotifierProvider<AccountController>((ref) {
   final c = AccountController(ref.watch(preferencesProvider));
@@ -96,9 +97,16 @@ class AccountController extends ChangeNotifier {
       key: sessionKey(uid),
       value: data.remove('token') as String,
     );
-    if (!await prefs.setString('active-account-id', uid)) {
-      throw StateError('Không lưu được tài khoản trên thiết bị.');
-    }
+    await DepartureLocalNotifications(
+      prefs,
+      prefix: accountPrefix(prefs),
+    ).clearScope(
+      afterClear: () async {
+        if (!await prefs.setString('active-account-id', uid)) {
+          throw StateError('Không lưu được tài khoản trên thiết bị.');
+        }
+      },
+    );
     await cache(data);
     error = null;
   }
@@ -115,15 +123,32 @@ class AccountController extends ChangeNotifier {
 
   Future<void> logout() async {
     final uid = id;
+    Options? logoutAuth;
     if (uid != null) {
       try {
-        await dio.post('/api/v1/accounts/logout', options: await auth());
+        logoutAuth = await auth();
+      } catch (_) {
+        /* Local logout must remain available. */
+      }
+    }
+    await DepartureLocalNotifications(
+      prefs,
+      prefix: accountPrefix(prefs),
+    ).clearScope(
+      afterClear: () async {
+        await prefs.remove('active-account-id');
+      },
+    );
+    if (uid != null) {
+      try {
+        if (logoutAuth != null) {
+          await dio.post('/api/v1/accounts/logout', options: logoutAuth);
+        }
       } catch (_) {
         /* Local logout still works offline. */
       }
       await TrafficApi.storage.delete(key: sessionKey(uid));
     }
-    await prefs.remove('active-account-id');
     account = null;
     if (!disposed) notifyListeners();
   }

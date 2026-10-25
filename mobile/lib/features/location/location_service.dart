@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,26 +11,35 @@ class LocationFailure implements Exception {
   String toString() => message;
 }
 
-/// Foreground fixes only; never substitutes a stale cached position for GPS.
+/// Foreground fixes; optional iOS background stream only for active navigation.
 class LocationService {
   final Future<LocationPermission> Function() check, request;
   final Future<bool> Function() enabled;
   final Future<Position> Function(LocationSettings) fix;
-  final bool android;
+  final Stream<Position> Function(LocationSettings) positions;
+  final bool android, ios;
+  bool get supportsBackgroundNavigation => ios;
   bool nativeProvider = false;
   LocationService({
     Future<LocationPermission> Function()? check,
     Future<LocationPermission> Function()? request,
     Future<bool> Function()? enabled,
     Future<Position> Function(LocationSettings)? fix,
+    Stream<Position> Function(LocationSettings)? positions,
     bool? android,
-  }) : check = check ?? Geolocator.checkPermission,
+    bool? ios,
+  }) : positions =
+           positions ??
+           ((settings) =>
+               Geolocator.getPositionStream(locationSettings: settings)),
+       check = check ?? Geolocator.checkPermission,
        request = request ?? Geolocator.requestPermission,
        enabled = enabled ?? Geolocator.isLocationServiceEnabled,
        fix = fix ?? ((s) => Geolocator.getCurrentPosition(locationSettings: s)),
        android =
            android ??
-           (!kIsWeb && defaultTargetPlatform == TargetPlatform.android);
+           (!kIsWeb && defaultTargetPlatform == TargetPlatform.android),
+       ios = ios ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS);
 
   Future<void> permission() async {
     var status = await check();
@@ -55,13 +65,26 @@ class LocationService {
     }
   }
 
-  LocationSettings settings({bool stream = false}) => android
+  LocationSettings settings({
+    bool stream = false,
+    bool backgroundNavigation = false,
+  }) => android
       ? AndroidSettings(
           accuracy: LocationAccuracy.high,
           forceLocationManager: nativeProvider,
           timeLimit: stream ? null : const Duration(seconds: 20),
           distanceFilter: stream ? 12 : 0,
           intervalDuration: const Duration(seconds: 5),
+        )
+      : ios
+      ? AppleSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: stream ? null : const Duration(seconds: 20),
+          distanceFilter: stream ? 12 : 0,
+          activityType: ActivityType.automotiveNavigation,
+          pauseLocationUpdatesAutomatically: false,
+          showBackgroundLocationIndicator: stream && backgroundNavigation,
+          allowBackgroundLocationUpdates: stream && backgroundNavigation,
         )
       : LocationSettings(
           accuracy: LocationAccuracy.high,

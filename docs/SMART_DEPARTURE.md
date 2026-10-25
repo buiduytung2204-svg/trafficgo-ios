@@ -193,3 +193,6 @@ Tài liệu tham khảo:
 [SQLite transactions](https://www.sqlite.org/lang_transaction.html),
 [SQLAlchemy SQLite](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html),
 [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications).
+
+## Bổ sung iOS local reminder và navigation nền
+Xem [IOS_BACKGROUND.md](IOS_BACKGROUND.md): hẹn trước trên thiết bị, chống trùng/đổi giờ/hủy theo tài khoản; GPS nền chỉ trong chuyến khi người dùng đồng ý. APNs/FCM vẫn chưa cấu hình.

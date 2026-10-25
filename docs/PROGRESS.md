@@ -308,3 +308,10 @@ No credentials changed, no push/deploy or paid plan activation.
 - Giữ cùng MapScreen/MapController giữa bản đồ khung và toàn màn hình; test giữ camera/tab. Shortcut dùng địa điểm đã lưu hoặc mở picker + form lưu thực tế.
 - Thẻ lịch chỉ dùng ETA và tuyến liên kết hợp lệ; không tạo giờ/quãng đường giả. Bản đồ vẫn dùng provider hiện tại.
 - Full suite: 143 test passed; analyze sạch. Chi tiết ảnh, khác biệt và giới hạn trong UI_CHARCOAL_LIME.md. Không kiểm thử iOS/thiết bị thật, không push.
+
+## iOS local reminders và GPS nền — 2026-10-25
+- Hẹn trước occurrence thật; reconciliation theo ETA/lịch, restart, quyền và scope tài khoản. Native queue 56 mốc + 4 snooze + 1 alarm kiểm tra. Không thêm APNs/FCM giả.
+- Native notification actions resolve event qua endpoint kiểm tra ownership/thời gian; route cache chỉ dùng khi mất kết nối, không bỏ qua server rejection.
+- iOS GPS nền có opt-in riêng mỗi chuyến, dừng khi kết thúc/dispose; không lưu lịch sử GPS. Không hứa chạy sau force-quit.
+- Windows static iOS checks và 4 CI helper tests đạt; full Flutter 217 passed/1 manual skip; backend 109 passed. Checklist thiết bị trong IOS_BACKGROUND.md. Chưa chạy iPhone/Xcode/signing thực tế.
+- Chưa commit/push trong lượt này. IPA cũ không tự cập nhật.

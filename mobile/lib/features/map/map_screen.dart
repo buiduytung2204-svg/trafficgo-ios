@@ -32,6 +32,7 @@ import '../departure/screens.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
+  final LocationService? locations;
   final bool autoStartNavigation;
   final bool compact;
   final Place? initialDestination;
@@ -44,6 +45,7 @@ class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({
     super.key,
     this.source,
+    this.locations,
     this.autoStartNavigation = false,
     this.compact = false,
     this.initialDestination,
@@ -68,9 +70,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late final BaseMapSource baseMap;
   late final TrafficRefreshPolicy trafficRefresh;
   bool get trafficAvailable => false;
-  final locationService = LocationService();
+  late final locationService = widget.locations ?? LocationService();
   String vehicle = 'car';
   bool locating = false;
+  bool backgroundNavigation = false,
+      startingNavigation = false,
+      arrivalPending = false;
   LatLng? location;
   double heading = 0;
   Place? destination;
@@ -245,11 +250,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     foreground = state == AppLifecycleState.resumed;
-    if (!foreground) {
+    if (!foreground && !(navigating && backgroundNavigation)) {
       gps?.cancel();
       gps = null;
-    } else if (navigating) {
-      watchPosition();
+    } else if (foreground && arrivalPending) {
+      arrivalPending = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) finishJourney();
+      });
+    } else if (foreground && navigating) {
+      if (gps == null) watchPosition();
+      if (mounted) setState(() {});
     }
   }
 
@@ -458,11 +469,40 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   Future<void> start() async {
+    if (startingNavigation || navigating) return;
+    startingNavigation = true;
     try {
       await permission();
       if (!mounted) return;
+      var background = false;
+      if (locationService.supportsBackgroundNavigation) {
+        final choice = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            scrollable: true,
+            title: const Text('Định vị khi khóa màn hình?'),
+            content: const Text(
+              'Chỉ theo dõi vị trí trong hành trình này, kể cả khi chuyển app hoặc khóa màn hình. iOS có thể hiện chỉ báo vị trí. Dừng hoặc kết thúc hành trình sẽ tắt theo dõi; không lưu lịch sử GPS liên tục.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text('Chỉ khi mở app'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: const Text('Tiếp tục định vị nền'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || choice == null) return;
+        background = choice;
+      }
       setState(() {
         navigating = true;
+        backgroundNavigation = background;
+        arrivalPending = false;
         activeTripId = newId();
         PerformanceLog.instance.phase = 'navigation';
         cameraSession.following = true;
@@ -472,18 +512,45 @@ class _MapScreenState extends ConsumerState<MapScreen>
       watchPosition();
     } catch (e) {
       fail(e);
+    } finally {
+      startingNavigation = false;
     }
   }
 
   void watchPosition() {
     gps?.cancel();
-    gps =
-        Geolocator.getPositionStream(
-          locationSettings: locationService.settings(stream: true),
-        ).listen(
+    gps = locationService
+        .positions(
+          locationService.settings(
+            stream: true,
+            backgroundNavigation: backgroundNavigation,
+          ),
+        )
+        .listen(
           (p) {
-            if (!mounted || !navigating || !foreground) return;
+            if (!mounted ||
+                !navigating ||
+                (!foreground && !backgroundNavigation)) {
+              return;
+            }
             final point = LatLng(p.latitude, p.longitude);
+            if (!foreground) {
+              location = point;
+              heading = p.heading.isFinite && p.heading >= 0 ? p.heading : 0;
+              if (p.accuracy <= 35 &&
+                  destination != null &&
+                  const Distance().as(
+                        LengthUnit.Meter,
+                        point,
+                        destination!.point,
+                      ) <
+                      35) {
+                arrivalPending = true;
+                stop();
+              }
+              // No map animations, routing requests or dialogs while locked.
+              return;
+            }
             setState(() {
               location = point;
               heading = p.heading.isFinite && p.heading >= 0 ? p.heading : 0;
@@ -593,6 +660,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
     gps = null;
     setState(() {
       navigating = false;
+      backgroundNavigation = false;
       cameraSession.following = false;
       offRouteFixes = 0;
     });

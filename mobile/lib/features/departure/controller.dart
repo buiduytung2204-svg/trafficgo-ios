@@ -31,6 +31,7 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
   bool online = false, busy = false, disposed = false, foreground = true;
   DateTime? syncedAt;
   Timer? poll;
+  int sessionRevision = 0;
   late final Future<void> ready;
   late final String prefix;
   String get storageKey => '${prefix}departure-session:$apiBase';
@@ -95,6 +96,13 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
       credential = await TrafficApi.storage.read(key: storageKey) ?? '';
       if (disposed) return;
       if (localNotifications.enabled) await localNotifications.initialize();
+      if (localNotifications.enabled) {
+        try {
+          await localNotifications.reconcile(schedules);
+        } catch (_) {
+          notificationWarning = 'Chưa hẹn được thông báo trên thiết bị. Kiểm tra quyền thông báo.';
+        }
+      }
       if (credential.isNotEmpty) await refresh();
     } catch (_) {
       error = 'Không đọc được thông tin kết nối lịch nhắc.';
@@ -152,21 +160,24 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> refresh() async {
     if (busy || credential.isEmpty || disposed) return;
     busy = true;
+    final revision = sessionRevision;
     try {
       final response = await dio.get(
         '/api/v1/departure/overview',
         options: auth,
       );
-      if (disposed) return;
+      if (disposed || revision != sessionRevision) return;
       final data = Map<String, dynamic>.from(response.data);
       accept(data);
       online = true;
       error = null;
       await localNotifications.prefs.setString(cacheKey, jsonEncode(data));
       try {
+        await localNotifications.reconcile(schedules);
         await localNotifications.receive(events);
+        notificationWarning = null;
       } catch (_) {
-        /* Inbox remains available. */
+        notificationWarning = 'Lịch đã đồng bộ nhưng chưa hẹn được thông báo thiết bị. Kiểm tra quyền iOS.';
       }
     } catch (_) {
       online = false;
@@ -193,13 +204,74 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
     await refresh();
   }
 
-  Future<Map<String, dynamic>> notificationEvent(String id) async {
-    await ready;
-    final response = await dio.get(
-      '/api/v1/departure/notifications/$id',
+  Future<String> resolveEvent(String id) async {
+    if (!id.startsWith('local:')) return id;
+    final parts = id.split(':');
+    if (parts.length != 3) throw StateError('Thông báo không hợp lệ.');
+    final response = await dio.post(
+      '/api/v1/departure/occurrences/${parts[1]}/reminder-event',
+      queryParameters: {'kind': parts[2]},
       options: auth,
     );
-    return Map<String, dynamic>.from(response.data);
+    return response.data['event_id'] as String;
+  }
+
+  Map<String, dynamic>? cachedLocalEvent(String id) {
+    final parts = id.split(':');
+    if (parts.length != 3 || parts.first != 'local') return null;
+    for (final schedule in schedules) {
+      if (!schedule.enabled) continue;
+      final rows = schedule.json['upcoming_occurrences'] is List
+          ? schedule.json['upcoming_occurrences'] as List
+          : [if (schedule.occurrence != null) schedule.occurrence];
+      for (final raw in rows) {
+        final occurrence = Map<String, dynamic>.from(raw);
+        if (occurrence['id'] == parts[1] &&
+            occurrence['status'] == 'planned' &&
+            (parseInstant(occurrence['arrival_at'])?.isAfter(DateTime.now()) ??
+                false)) {
+          return {
+            'id': id,
+            'schedule_name': schedule.name,
+            'occurrence_id': parts[1],
+            'cached': true,
+            'route': {
+              for (final key in [
+                'origin',
+                'destination',
+                'origin_name',
+                'destination_name',
+                'vehicle',
+                'journey_id',
+                'direction',
+              ])
+                key: schedule.json[key],
+            },
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>> notificationEvent(String id) async {
+    await ready;
+    final localId = id;
+    try {
+      id = await resolveEvent(id);
+      final response = await dio.get(
+        '/api/v1/departure/notifications/$id',
+        options: auth,
+      );
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (error) {
+      // Never bypass an explicit ownership/cancelled/retimed response.
+      if (error.response == null) {
+        final cached = cachedLocalEvent(localId);
+        if (cached != null) return cached;
+      }
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> notificationAction(
@@ -210,8 +282,9 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
     if (!notificationActions.add(id)) throw StateError('Đang xử lý thông báo.');
     changed();
     try {
+      final resolved = await resolveEvent(id);
       final response = await dio.post(
-        '/api/v1/departure/notifications/$id/action',
+        '/api/v1/departure/notifications/$resolved/action',
         data: {'action': action},
         options: auth,
       );
@@ -243,6 +316,12 @@ class DepartureController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> eraseRemote() async {
     if (!online) throw StateError('Backend chưa kết nối.');
     await dio.delete('/api/v1/departure/personal-data', options: auth);
+    sessionRevision++;
+    await localNotifications.prefs.setBool(
+      '${prefix}departure-local-notifications',
+      false,
+    );
+    await localNotifications.clearScope();
     await TrafficApi.storage.delete(key: storageKey);
     await localNotifications.prefs.remove(cacheKey);
     credential = '';

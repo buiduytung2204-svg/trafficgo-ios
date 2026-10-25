@@ -321,7 +321,7 @@ class SchedulesScreen extends ConsumerWidget {
                 label: const Text('Kết nối lịch nhắc'),
               ),
             const Text(
-              'Múi giờ: Việt Nam (UTC+7). Thông báo khi app đóng cần push; hiện lưu trong hộp thư backend.',
+              'Múi giờ: Việt Nam (UTC+7). Android/iOS có thể nhắc cục bộ theo lịch đã đồng bộ khi được cấp quyền. Mở app để nhận ETA mới; chưa có push từ server.',
             ),
             const SizedBox(height: 12),
             if (controller.schedules.isEmpty)
@@ -556,12 +556,18 @@ class SchedulesScreen extends ConsumerWidget {
                       context.push('/departure-notifications');
                     }
                   });
+                  if (ok) {
+                    await controller.localNotifications.reconcile(
+                      controller.schedules,
+                    );
+                    controller.changed();
+                  }
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
                           ok
-                              ? 'Đã bật thông báo khi ứng dụng đang nhận sự kiện.'
+                              ? 'Đã bật nhắc cục bộ theo lịch đã đồng bộ. Thay đổi ETA khi app đóng cần đồng bộ lại.'
                               : 'Chưa được cấp quyền thông báo.',
                         ),
                       ),
@@ -571,6 +577,45 @@ class SchedulesScreen extends ConsumerWidget {
                 icon: const Icon(Icons.notifications_active_outlined),
                 label: const Text('Cho phép thông báo trên thiết bị'),
               ),
+            if (controller.localNotifications.supported &&
+                controller.notificationWarning != null)
+              Text(
+                controller.notificationWarning!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            if (controller.localNotifications.supported &&
+                controller.localNotifications.enabled) ...[
+              Text(
+                controller.notificationWarning ??
+                    'Đã hẹn ${controller.localNotifications.localCount} mốc trên thiết bị${controller.localNotifications.localHorizon == null ? '' : ' đến ${vietnamTime(controller.localNotifications.localHorizon!.toIso8601String())}'}. Cần mở app để nhận ETA/lịch mới; chưa có push từ server.',
+              ),
+              TextButton(
+                onPressed: () => action(context, () async {
+                  await controller.localNotifications.testDelivery();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Đã hẹn kiểm tra sau 1 phút. Hãy khóa màn hình để thử. Focus hoặc cài đặt iOS có thể hạn chế hiển thị.',
+                        ),
+                      ),
+                    );
+                  }
+                }),
+                child: const Text('Thử thông báo sau 1 phút'),
+              ),
+              TextButton(
+                onPressed: () => action(context, () async {
+                  await controller.localNotifications.prefs.setBool(
+                    '${controller.prefix}departure-local-notifications',
+                    false,
+                  );
+                  await controller.localNotifications.clearScope();
+                  controller.changed();
+                }),
+                child: const Text('Tắt nhắc trên thiết bị'),
+              ),
+            ],
             if (controller.online)
               TextButton(
                 onPressed: () async {
@@ -1101,6 +1146,15 @@ Future<void> handleDepartureNotification(
         : await controller.notificationAction(eventId, actionId);
     if (!context.mounted || controller.disposed) return;
     if (actionId == 'open' || actionId == 'start') {
+      if (event['cached'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Đang mở tuyến từ bản lưu; chưa kiểm tra được thay đổi lịch trên backend.',
+            ),
+          ),
+        );
+      }
       openCommuteRoute(context, {
         ...Map<String, dynamic>.from(event['route']),
         'name': event['schedule_name'],

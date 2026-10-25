@@ -8,7 +8,7 @@ info=plistlib.loads((root/'mobile/ios/Runner/Info.plist').read_bytes())
 assert info['CFBundleDisplayName']=='TrafficGo'
 assert info['NSLocationWhenInUseUsageDescription']
 assert 'NSLocationAlwaysAndWhenInUseUsageDescription' not in info
-assert 'location' not in info.get('UIBackgroundModes',[])
+assert info.get('UIBackgroundModes') == ['location']  # User-started navigation; no unrelated modes.
 project=(root/'mobile/ios/Runner.xcodeproj/project.pbxproj').read_text()
 assert 'vn.trafficgo.trafficgo' in project
 assert 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;' in project

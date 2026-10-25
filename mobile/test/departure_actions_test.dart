@@ -174,6 +174,7 @@ void main() {
     });
     SharedPreferences.setMockInitialValues({
       'account:a:departure-local-notifications': true,
+      'active-account-id': 'a',
     });
     final prefs = await SharedPreferences.getInstance();
     final notifications = DepartureLocalNotifications(

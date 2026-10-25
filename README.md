@@ -22,7 +22,7 @@ Flutter + FastAPI cho bản đồ/giao thông Hà Nội, tập trung iPhone. Đ�
 - [iOS CI](docs/IOS_BUILD.md), [IPA signing](docs/IPA_SIGNING.md)
 - [Chi phí](docs/COST_ESTIMATION.md), [Tiến độ và việc còn lại](docs/PROGRESS.md)
 
-Không có voice navigation, background tracking, đăng nhập tài khoản đa thiết bị hoặc offline map. Lịch nhắc đồng bộ theo identity khách riêng từng thiết bị. Tuyến thường dùng lưu hai điểm; lịch nhắc giữ điểm xuất phát đã chọn. Limiter HTTP phù hợp một worker; scheduler chạy riêng và có lease database chống trùng. Triển khai backend public cần HTTPS và kiểm soát truy cập/chi phí phù hợp.
+Không có voice navigation, đăng nhập tài khoản đa thiết bị hoặc offline map. Lịch nhắc đồng bộ theo identity khách riêng từng thiết bị. Tuyến thường dùng lưu hai điểm; lịch nhắc giữ điểm xuất phát đã chọn. Limiter HTTP phù hợp một worker; scheduler chạy riêng và có lease database chống trùng. Triển khai backend public cần HTTPS và kiểm soát truy cập/chi phí phù hợp.
 
 Kiểm tra gần nhất: `flutter analyze` sạch, 45 Flutter tests và 76 backend tests đạt; build Web thành công. Cấu hình Codemagic giữ nguyên, chưa có IPA đã ký hoặc FCM/APNs hoạt động.
 
@@ -54,3 +54,6 @@ UI và chuyển động: [thiết kế, dependency và kiểm tra](docs/UI_MOTIO
 
 ## Codemagic iOS
 Chạy thủ công từ main: tạo environment group `trafficgo_build` với `API_BASE_URL`. Dùng `ios-unsigned` cho build chưa ký; dùng `ios-signed` khi có Ad Hoc certificate/profile hợp lệ. Backend Windows LAN cần `IOS_ALLOW_LOCAL_HTTP=1` trong unsigned build. Xem [hướng dẫn](docs/IOS_BUILD.md).
+
+## iOS nhắc cục bộ và GPS nền trong hành trình
+Đã bổ sung hẹn trước local notification, đồng bộ/hủy theo ETA/lịch/tài khoản, nút thử thông báo sau 1 phút và GPS nền iOS theo lựa chọn khi bắt đầu chuyến. APNs/FCM chưa cấu hình; chưa kiểm thử thiết bị thật. Cần build IPA mới. Xem [checklist và giới hạn](docs/IOS_BACKGROUND.md).

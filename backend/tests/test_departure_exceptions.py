@@ -265,3 +265,39 @@ async def test_day_off_persists_after_restart_without_skipping_next_day(fixture_
         assert rows['2026-10-27'].status=='planned'
         assert not list(session.scalars(select(NotificationEvent).where(NotificationEvent.occurrence_id==rows['2026-10-26'].id)))
     assert provider.calls==0
+
+
+def test_overview_exposes_owned_upcoming_occurrences_for_local_scheduling(client):
+    headers, row, day = setup(client)
+    data = client.get('/api/v1/departure/overview', headers=headers).json()
+    schedule = next(s for s in data['schedules'] if s['id'] == row['id'])
+    assert len(schedule['upcoming_occurrences']) >= 2
+    assert all(o['status'] == 'planned' for o in schedule['upcoming_occurrences'])
+    target = next(o for o in schedule['upcoming_occurrences'] if o['arrival_date'] == day)
+    client.put(f"/api/v1/departure/schedules/{row['id']}/exceptions/{day}", headers=headers, json={'action':'skip'})
+    latest = client.get('/api/v1/departure/overview', headers=headers).json()['schedules'][0]
+    assert target['id'] not in [o['id'] for o in latest['upcoming_occurrences']]
+
+
+def test_local_notification_resolution_validates_owner_time_and_deduplicates(client):
+    headers, row, day = setup(client)
+    event_id, occurrence_id = emit(client, headers, row['id'], day)
+    path = f'/api/v1/departure/occurrences/{occurrence_id}/reminder-event'
+    other = {'X-Schedule-Token':client.post('/api/v1/departure/session').json()['token']}
+    assert client.post(path, headers=other, params={'kind':'departure_due'}).status_code == 404
+    assert client.post(path, headers=headers, params={'kind':'bad'}).status_code == 422
+    assert client.post(path, headers=headers, params={'kind':'departure_due'}).status_code == 409
+    with session_for_test() as session:
+        occurrence = session.get(Occurrence, occurrence_id)
+        now=datetime.now(ZONE)
+        occurrence.data={**occurrence.data, 'departure_at':(now-timedelta(seconds=10)).isoformat(),
+                         'prepare_at':(now-timedelta(minutes=15)).isoformat(), 'arrival_at':(now+timedelta(minutes=25)).isoformat()}
+        session.commit()
+    first=client.post(path, headers=headers, params={'kind':'departure_due'})
+    assert first.status_code == 200, first.text
+    second=client.post(path, headers=headers, params={'kind':'departure_due'})
+    assert second.json()['event_id'] == first.json()['event_id']
+    resolved=first.json()['event_id']
+    result=client.post(f'/api/v1/departure/notifications/{resolved}/action',headers=headers,json={'action':'skip'})
+    assert result.status_code == 200
+    assert client.post(path,headers=headers,params={'kind':'departure_due'}).status_code == 409

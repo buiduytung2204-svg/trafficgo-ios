@@ -49,7 +49,8 @@ def create_router(access, db):
         return {'id': row.id, 'revision': row.revision, **row.data,
                 'day_exceptions': [serialize_occurrence(o) for o in occurrences
                     if o.status == 'skipped' or o.data.get('day_override')][-14:],
-                'occurrence': serialize_occurrence(current) if current else None}
+                'occurrence': serialize_occurrence(current) if current else None,
+                'upcoming_occurrences': [serialize_occurrence(o) for o in upcoming[:32]]}
 
     @router.post('/session', status_code=201)
     def register(session: Session = Depends(transaction_db)):
@@ -61,6 +62,29 @@ def create_router(access, db):
         session.add(Installation(token_hash=digest(token), user_id=user.id))
         session.commit()
         return {'token': token, 'user_id': user.id}
+
+    @router.post('/occurrences/{occurrence_id}/reminder-event')
+    def local_reminder_event(occurrence_id: str, kind: str, owner=Depends(identity), session: Session = Depends(transaction_db)):
+        moments = {'preparation_soon': ('prepare_at', -5), 'preparation_due': ('prepare_at', 0),
+                   'departure_soon': ('departure_at', -5), 'departure_due': ('departure_at', 0)}
+        if kind not in moments:
+            raise HTTPException(422, 'Loại nhắc không hợp lệ')
+        occurrence = session.get(Occurrence, occurrence_id)
+        if not occurrence:
+            raise HTTPException(404, 'Không tìm thấy chuyến')
+        schedule = owned(session, Schedule, occurrence.schedule_id, owner)
+        if not schedule.data['enabled'] or occurrence.status != 'planned':
+            raise HTTPException(409, 'Lịch nhắc đã thay đổi hoặc chuyến đã kết thúc')
+        now = datetime.now(timezone.utc)
+        field, delta = moments[kind]
+        instant = occurrence.data.get(field)
+        if not instant or now < datetime.fromisoformat(instant) + timedelta(minutes=delta, seconds=-30):
+            raise HTTPException(409, 'Giờ nhắc đã thay đổi. Mở lịch để xem giờ mới nhất')
+        if now >= datetime.fromisoformat(occurrence.data['arrival_at']):
+            raise HTTPException(409, 'Chuyến này đã qua giờ cần đến')
+        event = NotificationService().emit(session, schedule, occurrence, kind, now)
+        session.commit()
+        return {'event_id': event.id}
 
     @router.get('/overview')
     def overview(owner=Depends(identity), session: Session = Depends(transaction_db)):

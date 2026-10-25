@@ -34,3 +34,6 @@ Chạy trên Windows: python scripts/check_ios_config.py và python scripts/test
 Phiên Windows chưa chạy Xcode/macOS CI và chưa có artifact mới, chưa xác minh ký/cài trên iPhone.
 
 Nguồn: [Flutter YAML](https://docs.codemagic.io/yaml-quick-start/building-a-flutter-app/), [iOS signing](https://docs.codemagic.io/yaml-code-signing/signing-ios/), [ký/cài IPA](IPA_SIGNING.md).
+
+## Test bản iOS có GPS nền và local reminder
+Bản source mới hỗ trợ background location cho hành trình do người dùng bắt đầu và hẹn local notification trước khi đóng app. Xem [checklist iPhone](IOS_BACKGROUND.md). Cần build lại IPA; artifact cũ không tự được cập nhật. Không đồng nghĩa đã tích hợp APNs/FCM.
