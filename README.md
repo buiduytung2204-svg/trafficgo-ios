@@ -51,3 +51,6 @@ Xem [UI/UX redesign](docs/UI_REDESIGN.md): theme xanh ngọc light/dark, 4 tab g
 Ngoại lệ lịch lặp và thao tác thông báo: [hướng dẫn sử dụng](docs/SCHEDULE_EXCEPTIONS.md).
 
 UI và chuyển động: [thiết kế, dependency và kiểm tra](docs/UI_MOTION_REFRESH.md).
+
+## Codemagic iOS
+Chạy thủ công từ main: tạo environment group `trafficgo_build` với `API_BASE_URL`. Dùng `ios-unsigned` cho build chưa ký; dùng `ios-signed` khi có Ad Hoc certificate/profile hợp lệ. Backend Windows LAN cần `IOS_ALLOW_LOCAL_HTTP=1` trong unsigned build. Xem [hướng dẫn](docs/IOS_BUILD.md).

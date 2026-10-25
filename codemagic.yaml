@@ -1,68 +1,106 @@
-﻿workflows:
+# Manual builds only. Create the trafficgo_build environment group first.
+workflows:
   ios-unsigned:
-    name: TrafficGo iOS unsigned verification
+    name: TrafficGo iOS - unsigned / re-sign input
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
       flutter: 3.47.7
       xcode: latest
       cocoapods: default
-      vars:
-        API_BASE_URL: https://backend.example.invalid
+      groups:
+        - trafficgo_build
     scripts:
+      - name: Validate backend and iOS configuration
+        script: |
+          set -euo pipefail
+          python3 scripts/check_ios_config.py
+          python3 scripts/prepare_ios_build.py
       - name: Flutter dependencies and checks
         script: |
+          set -euo pipefail
           cd mobile
           flutter config --no-enable-swift-package-manager
           flutter --version
-          flutter pub get
+          flutter pub get --enforce-lockfile
           flutter analyze
           flutter test
       - name: iOS dependencies
         script: |
+          set -euo pipefail
           cd mobile/ios
           pod install
-      - name: Unsigned device app
+      - name: Archive unsigned iPhone app
         script: |
+          set -euo pipefail
           cd mobile
-          flutter build ios --release --no-codesign --dart-define=API_BASE_URL=$API_BASE_URL
-          ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app build/ios/TrafficGo-unsigned.app.zip
-      - name: Unsigned archive
+          flutter build ipa --release --no-codesign \
+            --build-number="${PROJECT_BUILD_NUMBER:-1}" \
+            --dart-define-from-file=../build/ci/defines.json
+      - name: Package artifacts for inspection and re-signing
         script: |
-          cd mobile/ios
-          xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release -destination 'generic/platform=iOS' -archivePath ../build/ios/archive/TrafficGo.xcarchive archive CODE_SIGNING_ALLOWED=NO
+          set -euo pipefail
+          cd mobile
+          APP="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+          test -d "$APP"
+          mkdir -p build/ios/artifacts/Payload
+          ditto "$APP" build/ios/artifacts/Payload/Runner.app
+          ditto -c -k --sequesterRsrc --keepParent "$APP" build/ios/artifacts/TrafficGo-unsigned.app.zip
+          ditto -c -k --sequesterRsrc --keepParent build/ios/archive/Runner.xcarchive build/ios/artifacts/TrafficGo-unsigned.xcarchive.zip
+          (cd build/ios/artifacts && zip -qry TrafficGo-UNSIGNED-resign-input.ipa Payload)
+          printf '%s\n' 'UNSIGNED: this IPA requires valid re-signing before installation.' > build/ios/artifacts/README.txt
+          cp ../build/ci/build-config.json build/ios/artifacts/
     artifacts:
-      - mobile/build/ios/*.zip
-      - mobile/build/ios/archive/*.xcarchive
+      - mobile/build/ios/artifacts/*.zip
+      - mobile/build/ios/artifacts/*.ipa
+      - mobile/build/ios/artifacts/*.txt
+      - mobile/build/ios/artifacts/*.json
       - /tmp/xcodebuild_logs/*.log
+
   ios-signed:
-    name: TrafficGo signed IPA (manual trigger after credentials)
+    name: TrafficGo iOS - signed Ad Hoc IPA
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
       flutter: 3.47.7
       xcode: latest
       cocoapods: default
+      groups:
+        - trafficgo_build
       ios_signing:
         distribution_type: ad_hoc
         bundle_identifier: vn.trafficgo.trafficgo
-      vars:
-        API_BASE_URL: https://backend.example.invalid
     scripts:
-      - name: Verify
+      - name: Validate signed build configuration
         script: |
+          set -euo pipefail
+          python3 scripts/check_ios_config.py
+          python3 scripts/prepare_ios_build.py --signed
+      - name: Flutter dependencies and checks
+        script: |
+          set -euo pipefail
           cd mobile
           flutter config --no-enable-swift-package-manager
-          flutter pub get
+          flutter pub get --enforce-lockfile
           flutter analyze
           flutter test
-      - name: Apply uploaded signing profiles
-        script: xcode-project use-profiles
+      - name: Install pods and apply uploaded signing profiles
+        script: |
+          set -euo pipefail
+          cd mobile/ios
+          pod install
+          xcode-project use-profiles
       - name: Export signed IPA
         script: |
+          set -euo pipefail
           cd mobile
-          flutter build ipa --release --export-options-plist=$HOME/export_options.plist --dart-define=API_BASE_URL=$API_BASE_URL
+          test -f "$HOME/export_options.plist"
+          flutter build ipa --release \
+            --build-number="${PROJECT_BUILD_NUMBER:-1}" \
+            --export-options-plist="$HOME/export_options.plist" \
+            --dart-define-from-file=../build/ci/defines.json
+          ditto -c -k --sequesterRsrc --keepParent build/ios/archive/Runner.xcarchive build/ios/TrafficGo-signed.xcarchive.zip
     artifacts:
       - mobile/build/ios/ipa/*.ipa
-      - mobile/build/ios/archive/*.xcarchive
-
+      - mobile/build/ios/*xcarchive.zip
+      - /tmp/xcodebuild_logs/*.log
