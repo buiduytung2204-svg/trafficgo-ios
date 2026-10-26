@@ -37,3 +37,11 @@ Nguồn: [Flutter YAML](https://docs.codemagic.io/yaml-quick-start/building-a-fl
 
 ## Test bản iOS có GPS nền và local reminder
 Bản source mới hỗ trợ background location cho hành trình do người dùng bắt đầu và hẹn local notification trước khi đóng app. Xem [checklist iPhone](IOS_BACKGROUND.md). Cần build lại IPA; artifact cũ không tự được cập nhật. Không đồng nghĩa đã tích hợp APNs/FCM.
+
+## Lần build thử tiếp theo
+
+- Chưa có Apple Developer: chọn **TrafficGo iOS - unsigned / re-sign input**, không chọn signed Ad Hoc.
+- Trong Environment variables, nhóm `trafficgo_build`, đặt `API_BASE_URL` là URL HTTPS hiện đang hoạt động của backend Windows nếu thử khác Wi-Fi. Tunnel tạm có thể đổi địa chỉ; không dùng lại URL cũ khi chưa kiểm tra `/health`.
+- Chọn branch `main`, Start new build. Backend không cần truy cập được từ CI để biên dịch, nhưng phải hoạt động khi sử dụng app.
+- Tải `TrafficGo-UNSIGNED-resign-input.ipa` để ký lại hợp lệ. File `source-revision.txt` trong artifacts giúp đối chiếu chính xác commit đã build.
+- Hai workflow chạy thêm unit tests cho cấu hình build trước khi archive. Chưa có cấu hình Firebase/APNs; bản này kiểm thử local reminder và GPS nền có lựa chọn.

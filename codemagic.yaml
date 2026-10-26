@@ -15,6 +15,7 @@ workflows:
         script: |
           set -euo pipefail
           python3 scripts/check_ios_config.py
+          python3 scripts/test_ios_build_config.py
           python3 scripts/prepare_ios_build.py
       - name: Flutter dependencies and checks
         script: |
@@ -50,6 +51,7 @@ workflows:
           (cd build/ios/artifacts && zip -qry TrafficGo-UNSIGNED-resign-input.ipa Payload)
           printf '%s\n' 'UNSIGNED: this IPA requires valid re-signing before installation.' > build/ios/artifacts/README.txt
           cp ../build/ci/build-config.json build/ios/artifacts/
+          git rev-parse HEAD > build/ios/artifacts/source-revision.txt
     artifacts:
       - mobile/build/ios/artifacts/*.zip
       - mobile/build/ios/artifacts/*.ipa
@@ -75,6 +77,7 @@ workflows:
         script: |
           set -euo pipefail
           python3 scripts/check_ios_config.py
+          python3 scripts/test_ios_build_config.py
           python3 scripts/prepare_ios_build.py --signed
       - name: Flutter dependencies and checks
         script: |
@@ -100,7 +103,9 @@ workflows:
             --export-options-plist="$HOME/export_options.plist" \
             --dart-define-from-file=../build/ci/defines.json
           ditto -c -k --sequesterRsrc --keepParent build/ios/archive/Runner.xcarchive build/ios/TrafficGo-signed.xcarchive.zip
+          git rev-parse HEAD > build/ios/source-revision.txt
     artifacts:
       - mobile/build/ios/ipa/*.ipa
       - mobile/build/ios/*xcarchive.zip
+      - mobile/build/ios/source-revision.txt
       - /tmp/xcodebuild_logs/*.log
