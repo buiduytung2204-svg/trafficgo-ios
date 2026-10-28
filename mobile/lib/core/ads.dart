@@ -146,11 +146,12 @@ class _TrafficAdBannerState extends State<TrafficAdBanner> {
 
   Future<void> _load(int width) async {
     final revision = ++_revision;
-    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width);
+    // Request a compact creative rather than clipping/scaling a larger ad.
+    const size = AdSize.banner; // Standard 320 × 50 logical pixels.
     if (!mounted ||
         revision != _revision ||
         !TrafficAds.instance.visible ||
-        size == null) {
+        width < size.width) {
       return;
     }
     final ad = BannerAd(
@@ -201,6 +202,7 @@ class _TrafficAdBannerState extends State<TrafficAdBanner> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = (constraints.maxWidth - 32).floor();
+        if (width < AdSize.banner.width) return const SizedBox.shrink();
         if (_width != width && width > 0) {
           _width = width;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -212,21 +214,14 @@ class _TrafficAdBannerState extends State<TrafficAdBanner> {
           });
         }
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Quảng cáo thử nghiệm',
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: _ad?.size.width.toDouble() ?? width.toDouble(),
-                height: _ad?.size.height.toDouble() ?? 60,
-                child: _loaded && _ad != null ? AdWidget(ad: _ad!) : null,
-              ),
-            ],
+          padding: const EdgeInsets.only(top: 8, bottom: 12),
+          child: Center(
+            heightFactor: 1,
+            child: SizedBox(
+              width: AdSize.banner.width.toDouble(),
+              height: AdSize.banner.height.toDouble(),
+              child: _loaded && _ad != null ? AdWidget(ad: _ad!) : null,
+            ),
           ),
         );
       },

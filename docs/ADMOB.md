@@ -4,8 +4,10 @@ Chỉ dùng Google sample App ID và ad unit ID trên Android/iOS. Không tải 
 thật, không tạo doanh thu, không cần cung cấp mật khẩu AdMob. Web/desktop bỏ qua SDK.
 Dependency chính thức: google_mobile_ads 9.2.0 (Apache-2.0), tương thích Flutter đang dùng.
 
-Banner adaptive nằm trong shell bốn tab chính, có nhãn thử nghiệm và khoảng phân
-cách với thanh tab. Các màn được push độc lập ngoài shell chưa có banner riêng.
+Banner chuẩn 320 × 50 nằm giữa shell bốn tab chính, có khoảng phân cách 12 pixel
+với thanh tab và đệm trên 8 pixel. Không cắt hay thu nhỏ nội dung quảng cáo; màn
+quá hẹp không hiển thị banner. SDK dùng ID test và tự đánh dấu quảng cáo thử nghiệm.
+Các màn được push độc lập ngoài shell chưa có banner riêng.
 Ẩn khi bàn phím mở hoặc đang dẫn đường. Không dùng quảng cáo trên Web giả làm AdMob.
 
 Interstitial chỉ áp dụng khi đổi tab chính, không phải nút Back, form, modal hay
