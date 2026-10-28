@@ -175,7 +175,8 @@ void main() {
         ),
         350,
       );
-      expect(find.text('250.000 VNĐ'), findsOneWidget);
+      // Week/month summaries can equal the fuel subtotal depending on today.
+      expect(find.text('250.000 VNĐ'), findsWidgets);
       expect(find.text('100.000 VNĐ'), findsWidgets);
       // The same amount legitimately appears in the week/month summary and
       // journey breakdown; the chart above verifies the actual 7-day total.

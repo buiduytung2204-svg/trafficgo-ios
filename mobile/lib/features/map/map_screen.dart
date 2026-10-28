@@ -1,4 +1,6 @@
 import 'route_option.dart';
+import '../../core/ads.dart';
+import '../../core/design/place_coordinates.dart';
 import '../../core/design/sheets.dart';
 import '../../core/design/components.dart';
 import '../maintenance/screens.dart';
@@ -232,6 +234,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
   @override
   void dispose() {
+    if (navigating) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => TrafficAds.instance.setNavigation(false));
+    }
     WidgetsBinding.instance.removeObserver(this);
     WidgetsBinding.instance.removeTimingsCallback(
       PerformanceLog.instance.frames,
@@ -501,6 +506,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
       setState(() {
         navigating = true;
+        TrafficAds.instance.setNavigation(true);
         backgroundNavigation = background;
         arrivalPending = false;
         activeTripId = newId();
@@ -656,6 +662,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   }
 
   void stop() {
+    TrafficAds.instance.setNavigation(false);
     gps?.cancel();
     gps = null;
     setState(() {
@@ -1474,6 +1481,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
+                              if (destination != null && !navigating) ...[
+                                const SizedBox(height: 6),
+                                PlaceCoordinates(point: destination!.point),
+                              ],
                               if (current != null)
                                 Text(
                                   '${formatEta(current!.seconds)} • ${(current!.meters / 1000).toStringAsFixed(1)} km',

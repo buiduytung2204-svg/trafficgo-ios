@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/ads.dart';
+
 import '../core/design/motion.dart';
 import '../features/map/home_overview.dart';
 import '../features/journeys/screens.dart';
@@ -44,30 +46,41 @@ class _TrafficHomeShellState extends State<TrafficHomeShell> {
             ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        animationDuration: TrafficMotion.duration(context),
-        selectedIndex: selected,
-        onDestinationSelected: select,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map_rounded),
-            label: 'Bản đồ',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.route_outlined),
-            selectedIcon: Icon(Icons.route),
-            label: 'Hành trình',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.two_wheeler_outlined),
-            selectedIcon: Icon(Icons.two_wheeler),
-            label: 'Xe',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Cá nhân',
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const TrafficAdBanner(),
+          NavigationBar(
+            animationDuration: TrafficMotion.duration(context),
+            selectedIndex: selected,
+            onDestinationSelected: (index) {
+              if (index == selected) return;
+              TrafficAds.instance.beforeTabChange(() {
+                if (mounted) select(index);
+              });
+            },
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.map_outlined),
+                selectedIcon: Icon(Icons.map_rounded),
+                label: 'Bản đồ',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.route_outlined),
+                selectedIcon: Icon(Icons.route),
+                label: 'Hành trình',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.two_wheeler_outlined),
+                selectedIcon: Icon(Icons.two_wheeler),
+                label: 'Xe',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: 'Cá nhân',
+              ),
+            ],
           ),
         ],
       ),

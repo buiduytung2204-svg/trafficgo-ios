@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
 import 'app/state.dart';
+import 'core/ads.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,4 +15,7 @@ Future<void> main() async {
       child: const TrafficGoApp(),
     ),
   );
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    TrafficAds.instance.initialize();
+  });
 }

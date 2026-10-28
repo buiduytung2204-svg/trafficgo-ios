@@ -1,4 +1,5 @@
 import '../../core/design/components.dart';
+import '../../core/design/place_coordinates.dart';
 
 import 'dart:async';
 
@@ -227,6 +228,11 @@ class _PlacePickerState extends ConsumerState<PlacePicker> {
               ),
             ),
           const Text('Powered by Geoapify • © OpenStreetMap contributors'),
+          if (chosen != null)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: PlaceCoordinates(point: chosen!.point),
+            ),
           if (chosen != null)
             SafeArea(
               child: TrafficPrimaryButton(
