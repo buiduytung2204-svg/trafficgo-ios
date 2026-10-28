@@ -1,5 +1,20 @@
 # Build iOS trên Codemagic
 
+## Phương án dự phòng: GitHub Actions
+
+Vào GitHub → Actions → **TrafficGo iOS unsigned** → Run workflow, chọn `main`
+và nhập `api_base_url` là URL HTTPS backend. Không thêm token, /health hoặc khóa
+nhà cung cấp. Workflow chỉ chạy thủ công, dùng macOS tiêu chuẩn và chỉ chạy khi
+repository public. Không thay đổi workflow Codemagic, không publish hay ký giả.
+
+Sau khi thành công, tải artifact `TrafficGo-iOS-unsigned-<số run>` rồi giải nén
+để lấy `TrafficGo-UNSIGNED-resign-input.ipa`, archive và SHA256SUMS. Artifact giữ
+3 ngày. IPA vẫn cần ký lại hợp lệ trước khi cài. Trong app mới có thể đổi URL
+backend ở Cá nhân → Địa chỉ backend, không cần build lại chỉ vì tunnel đổi URL.
+
+Nguồn: https://docs.github.com/en/actions/concepts/billing-and-usage,
+https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow.
+
 1. Add application, kết nối GitHub và chọn buiduytung2204-svg/trafficgo-ios.
 2. Dùng codemagic.yaml ở root; chọn branch main.
 3. Tạo environment group **trafficgo_build**; cho app dùng nhóm này.

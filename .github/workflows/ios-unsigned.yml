@@ -1,0 +1,92 @@
+name: TrafficGo iOS unsigned
+run-name: iOS unsigned · ${{ github.ref_name }} · run ${{ github.run_number }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: HTTPS backend origin (no /health or credentials)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trafficgo-ios-unsigned-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    # Standard public-repository runner; never a paid larger runner.
+    if: github.event.repository.visibility == 'public'
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      API_BASE_URL: ${{ inputs.api_base_url }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_ios_config.py
+          python3 scripts/test_ios_build_config.py
+          python3 scripts/prepare_ios_build.py
+          xcodebuild -version
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: false
+      - name: Analyze and test Flutter
+        working-directory: mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter config --no-enable-swift-package-manager
+          flutter pub get --enforce-lockfile
+          flutter analyze
+          flutter test
+      - name: Install CocoaPods dependencies
+        working-directory: mobile/ios
+        shell: bash
+        run: |
+          set -euo pipefail
+          pod install
+      - name: Archive iPhone app without signing
+        working-directory: mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build ipa --release --no-codesign \
+            --build-number="$GITHUB_RUN_NUMBER" \
+            --dart-define-from-file=../build/ci/defines.json
+      - name: Package unsigned IPA and archive
+        working-directory: mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+          test -d "$APP"
+          mkdir -p build/ios/artifacts/Payload
+          ditto "$APP" build/ios/artifacts/Payload/Runner.app
+          (cd build/ios/artifacts && zip -qry TrafficGo-UNSIGNED-resign-input.ipa Payload)
+          ditto -c -k --sequesterRsrc --keepParent build/ios/archive/Runner.xcarchive build/ios/artifacts/TrafficGo-unsigned.xcarchive.zip
+          git rev-parse HEAD > build/ios/artifacts/source-revision.txt
+          cp ../build/ci/build-config.json build/ios/artifacts/
+          printf '%s\n' 'UNSIGNED: requires valid re-signing before installation. No Apple certificates are included.' > build/ios/artifacts/README.txt
+          (cd build/ios/artifacts && shasum -a 256 *.ipa *.zip > SHA256SUMS.txt)
+      - name: Upload unsigned build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: TrafficGo-iOS-unsigned-${{ github.run_number }}
+          retention-days: 3
+          if-no-files-found: error
+          path: |
+            mobile/build/ios/artifacts/*.ipa
+            mobile/build/ios/artifacts/*.zip
+            mobile/build/ios/artifacts/*.txt
+            mobile/build/ios/artifacts/*.json
