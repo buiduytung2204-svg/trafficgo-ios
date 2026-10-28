@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/state.dart';
 import '../../core/api.dart';
+import 'backend_connection.dart';
 import '../../core/performance.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -140,9 +141,13 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const ListTile(
-                title: Text('Kết nối riêng tư'),
+              ListTile(
+                title: const Text('Địa chỉ backend'),
                 subtitle: Text(apiBase),
+                trailing: const Icon(Icons.edit_outlined),
+                onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => BackendConnectionScreen(prefs: ref.read(preferencesProvider)),
+                )),
               ),
               ListTile(
                 leading: const Icon(Icons.key),

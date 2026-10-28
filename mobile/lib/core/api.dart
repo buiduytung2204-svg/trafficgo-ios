@@ -4,11 +4,9 @@ import 'package:latlong2/latlong.dart';
 
 import 'models.dart';
 import 'performance.dart';
+import 'backend_config.dart';
 
-const apiBase = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://localhost:8000',
-);
+String get apiBase => BackendConfig.current;
 
 class TrafficApi {
   final Dio dio;
